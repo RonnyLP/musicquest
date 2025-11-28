@@ -2,34 +2,44 @@ package com.example.melodyquest.data.repository
 
 import com.example.melodyquest.data.local.dao.TrackDAO
 import com.example.melodyquest.data.local.entity.Track
+import com.example.melodyquest.data.remote.TrackRemoteDataSource
+import com.example.melodyquest.domain.model.TrackConfiguration
 import kotlinx.coroutines.flow.Flow
+import java.util.UUID
 import javax.inject.Inject
 
 
 class TrackRepository @Inject constructor(
-    private val trackDao: TrackDAO
+    private val trackDao: TrackDAO,
+    private val remote: TrackRemoteDataSource
 ) {
 
-    // Listar
-    fun getAllTracks(): Flow<List<Track>> {
-        return trackDao.getAllTracks()
+    suspend fun syncTracks(email: String) {
+        val remoteTracks = remote.getTracks(email)
+
+        trackDao.deleteTracksForUser(email)
+        trackDao.insertTracks(remoteTracks)
     }
 
-    // Insertar
-    suspend fun insertTrack(track: Track) {
+    suspend fun getLocalTracks(email: String): List<Track> =
+        trackDao.getTracksForUser(email)
+
+    suspend fun addTrack(email: String, name: String, config: TrackConfiguration) {
+        val id = UUID.randomUUID().toString()
+
+        val track = Track(
+            id = id,
+            name = name,
+            data = config,
+            ownerEmail = email
+        )
+
+        remote.addTrack(email, track)
         trackDao.insertTrack(track)
     }
 
-    // Actualizar
-    suspend fun updateTrack(track: Track) {
-        trackDao.updateTrack(track)
-    }
-
-    // Eliminar
-    suspend fun deleteTrack(track: Track) {
+    suspend fun deleteTrack(email: String, track: Track) {
+        remote.deleteTrack(email, track.id)
         trackDao.deleteTrack(track)
     }
-
-
-
 }
