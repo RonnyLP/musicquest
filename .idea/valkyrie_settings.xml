@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Valkyrie.Settings">
+    <option name="iconPackDestination" value="E:\Ronny\Programming\AndroidApps\MelodyQuest\app\src\main\java\com\example\melodyquest\core\ui\icons" />
+    <option name="iconPackName" value="AppIcons" />
+    <option name="iconPackPackage" value="com.example.melodyquest.core.ui.icons" />
+    <option name="mode" value="IconPack" />
+    <option name="packageName" value="com.example.melodyquest.core.ui.icons" />
+  </component>
+</project>

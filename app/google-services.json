@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1096969623252",
+    "project_id": "musicquest-610ba",
+    "storage_bucket": "musicquest-610ba.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1096969623252:android:71c1f35bfe572402ce0d41",
+        "android_client_info": {
+          "package_name": "com.example.melodyquest"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCbEMk3b5a9Mbv8--wAn_2pmgo6m9z4Olg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
