@@ -3,6 +3,7 @@ package com.example.melodyquest.di
 import com.example.melodyquest.data.auth.FirebaseAuthRepository
 import com.example.melodyquest.domain.auth.AuthRepository
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -40,5 +41,11 @@ object AuthModule {
         firebaseAuth: FirebaseAuth
     ): AuthRepository {
         return FirebaseAuthRepository(firebaseAuth)
+    }
+
+    @Provides
+    @Singleton
+    fun provideFirebaseDatabase(): FirebaseDatabase {
+        return FirebaseDatabase.getInstance()
     }
 }

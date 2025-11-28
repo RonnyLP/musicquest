@@ -2,6 +2,7 @@ package com.example.melodyquest.feature.login.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.melodyquest.data.repository.SavedAccountsRepository
 import com.example.melodyquest.domain.auth.AuthRepository
 import com.example.melodyquest.domain.auth.User
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -39,7 +40,8 @@ interface IAuthViewModel {
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val savedAccountRepository: SavedAccountsRepository
 ) : ViewModel(), IAuthViewModel {
 
     // Estados de UI
@@ -98,6 +100,7 @@ class AuthViewModel @Inject constructor(
 
             if (result.success) {
                 _isAuthenticated.value = true
+                savedAccountRepository.addAccount(email) // Guardar cuenta localmente
                 onResult(true)
             } else {
                 _errorMessage.value = result.errorMessage
@@ -164,6 +167,8 @@ class AuthViewModel @Inject constructor(
             if (result.success) {
                 _isAuthenticated.value = true
                 _successMessage.value = "Cuenta creada exitosamente. Verifica tu correo."
+                savedAccountRepository.addAccount(email)
+
                 onResult(true)
             } else {
                 _errorMessage.value = result.errorMessage
