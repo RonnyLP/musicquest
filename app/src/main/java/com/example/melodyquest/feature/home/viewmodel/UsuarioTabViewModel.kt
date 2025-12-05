@@ -26,6 +26,7 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
@@ -44,6 +45,7 @@ import javax.inject.Inject
 class UsuarioTabViewModel @Inject constructor(
     private val locationRepository: LocationRepository,
     private val auth: FirebaseAuth,
+    private val database: FirebaseDatabase,
     private val application: Application
 ) : ViewModel() {
 
@@ -85,9 +87,17 @@ class UsuarioTabViewModel @Inject constructor(
 
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
-                result.lastLocation?.let { loc ->
-                    _location.value = UserLocation(loc)
-                }
+//                result.lastLocation?.let { loc ->
+//                    _location.value = UserLocation(loc)
+//                    sendLocationToFirebase(loc)
+//                }
+                val lastLoc = result.lastLocation ?: return
+
+                val loc = UserLocation(lastLoc)
+                _location.value = loc
+
+                sendLocationToFirebase(loc)
+
             }
         }
 
@@ -108,6 +118,24 @@ class UsuarioTabViewModel @Inject constructor(
         stopLocationUpdates()
         super.onCleared()
     }
+
+
+    private fun sendLocationToFirebase(location: UserLocation) {
+        val user = auth.currentUser ?: return
+
+        val userRef = database.getReference("user_locations")
+            .child(user.uid)
+            .child("location")
+
+        val data = mapOf(
+            "latitude" to location.latitude,
+            "longitude" to location.longitude,
+            "timestamp" to System.currentTimeMillis()
+        )
+
+        userRef.setValue(data)
+    }
+
 
     fun startGoogleAuth() {
 
