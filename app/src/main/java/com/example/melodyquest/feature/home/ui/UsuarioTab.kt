@@ -18,10 +18,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,13 +38,50 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberMarkerState
 
+
+@Preview
+@Composable
+fun UsuarioTabPreview() {
+    UsuarioTab()
+}
+
+
 @Composable
 fun UsuarioTab(
     innerPadding: PaddingValues = PaddingValues(0.dp),
     usuarioTabViewModel: UsuarioTabViewModel = hiltViewModel()
 ) {
-    val location by usuarioTabViewModel.location.collectAsStateWithLifecycle()
-    val currentUserLocation = location
+
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+
+        val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
+
+        if (granted) {
+            usuarioTabViewModel.startLocationUpdates()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        launcher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
+    }
+
+
+//    val location by usuarioTabViewModel.location.collectAsStateWithLifecycle()
+    val location = usuarioTabViewModel.location.collectAsState()
+    val currentUserLocation = location.value
+
+    if (currentUserLocation != null) {
+        Text(currentUserLocation.latitude.toString()  + " " + currentUserLocation.longitude.toString())
+    }
+
 
     // 2. Crear el lanzador de solicitud de permisos
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -92,10 +131,6 @@ fun UsuarioTab(
                     .fillMaxWidth()
             )
         } else {
-            // --- Pantalla del Mapa (con lógica de permisos añadida) ---
-
-            // 3. Lanzar la solicitud de permisos cuando la vista del mapa se muestra por primera vez
-            // Se ejecuta solo cuando currentUserLocation cambia de null a un valor.
             LaunchedEffect(Unit) {
                 Log.d("UsuarioTab", "Vista de mapa visible. Solicitando permisos.")
                 permissionLauncher.launch(

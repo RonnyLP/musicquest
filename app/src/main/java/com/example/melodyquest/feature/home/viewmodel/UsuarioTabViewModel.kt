@@ -6,11 +6,13 @@ import android.app.Application
 import android.location.LocationListener
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.os.Looper
 import android.util.Log
 import androidx.activity.result.launch
 import androidx.annotation.RequiresPermission
+import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
@@ -52,106 +54,63 @@ class UsuarioTabViewModel @Inject constructor(
     private val _location = MutableStateFlow<UserLocation?>(null)
     val location = _location.asStateFlow()
 
-    // 1. Cliente de GPS y el Callback
+    private val updateInterval = 10_000L
+
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(application)
 
-    private val locationManager = application.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-
-    private lateinit var locationCallback: LocationCallback
 
 
-    init {
-        Log.d(TAG, "DAFDSFGDSGFSGDSFG")
-        startLocationUpdates()
-        // El bloque init ahora solo se usa para observar los datos que se muestran en el mapa.
-//        auth.currentUser?.uid?.let { userId ->
-//            locationRepository.observeLocation(userId) { dbLocation ->
-//                Log.d(TAG, "Dato recibido de la BD para mostrar en el mapa: $dbLocation")
-//                _location.value = dbLocation
-//            }
-//        } ?: run {
-//            Log.w(TAG, "Usuario actual nulo, no se puede observar la ubicación.")
-//        }
+    private var locationCallback: LocationCallback? = null
 
-        // Iniciar la recolección de actualizaciones de ubicación
-
-    }
-
-    // 2. La función que inicia el seguimiento GPS desde el ViewModel
-    // La anotación SuppressLint es necesaria porque el permiso se comprueba en la UI.
-    private val locationListener = LocationListener { newLocation ->
-        Log.d(
-            TAG,
-            "GPS obtuvo nueva ubicación: ${newLocation.latitude}, ${newLocation.longitude}"
-        )
-
-        // Lanza una coroutine dentro del ciclo de vida del ViewModel
-        viewModelScope.launch {
-            // ¡ACCIÓN! AQUÍ EL VIEWMODEL ENVÍA LOS DATOS
-            auth.currentUser?.uid?.let { userId ->
-                locationRepository.saveLocation(
-                    lat = newLocation.latitude,
-                    lon = newLocation.longitude
-                )
-            }
-        }
-    }
-
-    @SuppressLint("MissingPermission")
     fun startLocationUpdates() {
-        Log.d(TAG, "Iniciando seguimiento GPS desde el ViewModel...")
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000L, 0f, locationListener)
-    }
+        if (locationCallback != null) return
+
+        val hasPermission = ActivityCompat.checkSelfPermission(
+            application, Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
 
 
+        if (!hasPermission) {
+            return
+        }
 
-    @RequiresPermission(anyOf = [Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION])
-    fun getLocationUpdatesFlow() = callbackFlow {
+//        Log.d(TAG, "Iniciando seguimiento GPS desde el ViewModel...")
+//        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000L, 0f, locationListener)
         val locationRequest = LocationRequest.Builder(
-            Priority.PRIORITY_HIGH_ACCURACY, 10000
+            Priority.PRIORITY_HIGH_ACCURACY,
+            updateInterval
         ).build()
 
-        val locationCallback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult) {
-                locationResult.locations.forEach { location ->
-                    Log.d(TAG, "Dato recibido: $location")
-                }
-                locationResult.lastLocation?.let { location ->
-                    Log.d(TAG, "Flow: Nueva ubicación recibida: ${location.latitude}, ${location.longitude}")
-                    // Ofrece la nueva ubicación al flow
-                    trySend(location).isSuccess
+
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                result.lastLocation?.let { loc ->
+                    _location.value = UserLocation(loc)
                 }
             }
         }
 
-        Log.d(TAG, "Flow: Solicitando actualizaciones de ubicación...")
         fusedLocationClient.requestLocationUpdates(
             locationRequest,
-            locationCallback,
+            locationCallback!!,
             Looper.getMainLooper()
         )
-
-        // Cuando el flow se cancela, se detienen las actualizaciones
-        awaitClose {
-            Log.d(TAG, "Flow: Deteniendo actualizaciones de ubicación.")
-            fusedLocationClient.removeLocationUpdates(locationCallback) }
     }
-
-
-    // 3. La función que detiene el seguimiento GPS
     fun stopLocationUpdates() {
-        Log.d(TAG, "Deteniendo el seguimiento GPS del ViewModel.")
-        locationManager.removeUpdates(locationListener)
+        locationCallback?.let {
+            fusedLocationClient.removeLocationUpdates(it)
+        }
+        locationCallback = null
     }
 
-    // Limpieza automática cuando el ViewModel se destruye
     override fun onCleared() {
-        super.onCleared()
         stopLocationUpdates()
+        super.onCleared()
     }
 
     fun startGoogleAuth() {
-        // TODO: Not yet implemented
+
     }
+
 }
