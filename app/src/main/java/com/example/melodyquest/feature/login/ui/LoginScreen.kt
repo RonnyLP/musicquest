@@ -47,23 +47,18 @@ import com.example.melodyquest.core.ui.components.TransparentButton
 import com.example.melodyquest.core.ui.icons.AppIcons
 import com.example.melodyquest.core.ui.icons.User
 import com.example.melodyquest.feature.login.viewmodel.AuthViewModel
+import com.example.melodyquest.feature.login.viewmodel.FAuthViewModel
+import com.example.melodyquest.feature.login.viewmodel.FSelectAccountViewModel
 import com.example.melodyquest.feature.login.viewmodel.IAuthViewModel
 import com.example.melodyquest.feature.login.viewmodel.ISelectAccountViewModel
 import com.example.melodyquest.feature.login.viewmodel.LoginViewModel
 import com.example.melodyquest.feature.login.viewmodel.PreviewAuthViewModel
-import com.example.melodyquest.feature.login.viewmodel.PreviewSelectAccountViewModel
 import com.example.melodyquest.feature.login.viewmodel.SelectAccountViewModel
 
 
-@Preview
 @Composable
-fun LoginScreenPreview() {
-    LoginScreen(onLoginSuccess = {})
-}
-
-@Composable
-fun LoginScreen(
-    onLoginSuccess: () -> Unit,
+fun WelcomeScreen(
+    onNavigateToSelectAccount: () -> Unit,
     viewModel: LoginViewModel = viewModel()
 ) {
     Column(
@@ -84,21 +79,12 @@ fun LoginScreen(
 
         GreenButton(
             onClick = {
-                viewModel.loginWithGoogle(onSuccess = onLoginSuccess)
+                viewModel.loginWithGoogle(onSuccess = onNavigateToSelectAccount)
             },
             text = "Iniciar sesión",
             modifier = Modifier
                 .fillMaxWidth()
         )
-//        Spacer(modifier = Modifier.height(16.dp))
-//        TransparentButton(
-//            onClick = {
-//                viewModel.loginAsGuest(onSuccess = onLoginSuccess)
-//            },
-//            text = "Continuar sin iniciar sesión",
-//            modifier = Modifier
-//                .fillMaxWidth()
-//        )
     }
 }
 
@@ -110,58 +96,16 @@ fun WelcomeScreenPreview() {
 }
 
 
-@Composable
-fun WelcomeScreen(
-    onNavigateToSelectAccount: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        // Logo o nombre de la app
-        Text(
-            text = "MelodiQuest",
-            fontSize = 48.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        Spacer(modifier = Modifier.height(80.dp))
-
-        // Botón de iniciar sesión
-        Button(
-            onClick = onNavigateToSelectAccount,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF4CAF50)
-            )
-        ) {
-            Text(
-                text = "Iniciar sesión",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
-    }
-}
-
-
 @Preview
 @Composable
 fun SelectAccountScreenPreview(
-//    vm: ISelectAccountViewModel = PreviewSelectAccountViewModel()
+    vm: ISelectAccountViewModel = FSelectAccountViewModel()
 ) {
-//    SelectAccountScreen(
-//        viewModel = vm,
-//        onNavigateToFullLogin = {},
-//        onNavigateToPasswordLogin = {}
-//    )
+    SelectAccountScreen(
+        viewModel = vm,
+        onNavigateToFullLogin = {},
+        onNavigateToPasswordLogin = {}
+    )
 }
 
 
@@ -169,7 +113,7 @@ fun SelectAccountScreenPreview(
 @Composable
 fun SelectAccountScreen(
 //    viewModel: ISelectAccountViewModel = viewModel(),
-    viewModel: SelectAccountViewModel = hiltViewModel(),
+    viewModel: ISelectAccountViewModel = hiltViewModel<SelectAccountViewModel>(),
     onNavigateToPasswordLogin: (String) -> Unit,
     onNavigateToFullLogin: () -> Unit
 ) {
@@ -180,6 +124,7 @@ fun SelectAccountScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color.White)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -274,15 +219,21 @@ fun AccountItem(
 
 @Preview
 @Composable
-fun PasswordLoginScreenPreview() {
-    PasswordLoginScreen("@username", onNavigateBack = {}, onLoginSuccess = {}, onForgotPassword = {})
+fun PasswordLoginScreenPreview(fakeVM: IAuthViewModel = FAuthViewModel()) {
+    PasswordLoginScreen(
+        "@username",
+        viewModel = fakeVM,
+        onNavigateBack = {},
+        onLoginSuccess = {},
+        onForgotPassword = {}
+    )
 }
 
 
 @Composable
 fun PasswordLoginScreen(
     username: String,
-    viewModel: AuthViewModel = hiltViewModel(),
+    viewModel: IAuthViewModel = hiltViewModel<AuthViewModel>(),
     onNavigateBack: () -> Unit,
     onLoginSuccess: () -> Unit,
     onForgotPassword: () -> Unit
@@ -295,6 +246,7 @@ fun PasswordLoginScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color.White)
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -393,14 +345,19 @@ fun PasswordLoginScreen(
 // ========== PANTALLA 4: Login completo ==========
 @Preview
 @Composable
-fun FullLoginScreenPreview() {
-    FullLoginScreen(onNavigateToRegister = {}, onLoginSuccess = {}, onForgotPassword = {})
+fun FullLoginScreenPreview(fakeVM: IAuthViewModel = FAuthViewModel()) {
+    FullLoginScreen(
+        fakeVM,
+        onNavigateToRegister = {},
+        onLoginSuccess = {},
+        onForgotPassword = {}
+    )
 }
 
 
 @Composable
 fun FullLoginScreen(
-    viewModel: AuthViewModel = hiltViewModel(),
+    viewModel: IAuthViewModel = hiltViewModel<AuthViewModel>(),
     onNavigateToRegister: () -> Unit,
     onLoginSuccess: () -> Unit,
     onForgotPassword: () -> Unit
@@ -413,6 +370,7 @@ fun FullLoginScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color.White)
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -522,14 +480,14 @@ fun FullLoginScreen(
 // ========== PANTALLA 5: Registro ==========
 @Preview
 @Composable
-fun RegisterScreenPreview() {
-    RegisterScreen(onNavigateToLogin = {}, onRegisterSuccess = {})
+fun RegisterScreenPreview(fakeVM: IAuthViewModel = FAuthViewModel()) {
+    RegisterScreen(fakeVM, onNavigateToLogin = {}, onRegisterSuccess = {})
 }
 
 
 @Composable
 fun RegisterScreen(
-    viewModel: AuthViewModel = hiltViewModel(),
+    viewModel: IAuthViewModel = hiltViewModel<AuthViewModel>(),
     onNavigateToLogin: () -> Unit,
     onRegisterSuccess: () -> Unit
 ) {
@@ -548,6 +506,7 @@ fun RegisterScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color.White)
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

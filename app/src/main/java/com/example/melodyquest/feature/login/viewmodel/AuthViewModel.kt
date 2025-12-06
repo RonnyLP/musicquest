@@ -323,3 +323,25 @@ class AuthViewModel @Inject constructor(
     }
 }
 
+
+class FAuthViewModel: ViewModel(), IAuthViewModel {
+    override val isLoading: StateFlow<Boolean> = MutableStateFlow(false).asStateFlow()
+    override val errorMessage: StateFlow<String?> = MutableStateFlow(null).asStateFlow()
+    override val isAuthenticated: StateFlow<Boolean> = MutableStateFlow(false).asStateFlow()
+    override val successMessage: StateFlow<String?> = MutableStateFlow(null).asStateFlow()
+    override val currentUser: StateFlow<User?> = MutableStateFlow<User?>(
+        User(uid = "dummy_uid", email = "dummy@example.com", displayName = "Dummy User",  isEmailVerified = false)
+    ).asStateFlow()
+
+    override fun login(email: String, password: String, onResult: (Boolean) -> Unit) { onResult(true) }
+    override fun loginWithPassword(email: String, password: String, onResult: (Boolean) -> Unit) { onResult(true) }
+    override fun register(email: String, password: String, confirmPassword: String, displayName: String?, onResult: (Boolean) -> Unit) { onResult(true) }
+    override fun sendPasswordReset(email: String, onResult: (Boolean) -> Unit) { onResult(true) }
+    override fun signOut(onComplete: () -> Unit) { onComplete() }
+    override fun checkSession() { /* No-op */ }
+    override fun resendVerificationEmail(onResult: (Boolean) -> Unit) { onResult(true) }
+    override fun updateDisplayName(displayName: String, onResult: (Boolean) -> Unit) { onResult(true) }
+    override fun deleteAccount(onResult: (Boolean) -> Unit) { onResult(true) }
+    override fun clearError() { /* No-op */ }
+    override fun clearSuccessMessage() { /* No-op */ }
+}

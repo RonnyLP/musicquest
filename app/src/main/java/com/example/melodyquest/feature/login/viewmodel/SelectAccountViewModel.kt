@@ -16,9 +16,9 @@ interface ISelectAccountViewModel {
     val savedAccounts: StateFlow<List<String>>
     val isLoading: StateFlow<Boolean>
 
-    fun refreshAccounts()
-    fun removeAccount(email: String)
-    fun addAccount(email: String)
+    fun refreshAccounts() {}
+    fun removeAccount(email: String) {}
+    fun addAccount(email: String) {}
 }
 
 
@@ -86,13 +86,13 @@ interface ISelectAccountViewModel {
 class SelectAccountViewModel @Inject constructor(
 //    private val authRepository: AuthRepository,
     private val savedAccountsRepository: SavedAccountsRepository
-) : ViewModel() {
+) : ViewModel(),  ISelectAccountViewModel {
 
     private val _savedAccounts = MutableStateFlow<List<String>>(emptyList())
-     val savedAccounts: StateFlow<List<String>> = _savedAccounts.asStateFlow()
+    override val savedAccounts: StateFlow<List<String>> = _savedAccounts.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
-     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    override val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     init {
         loadSavedAccounts()
@@ -112,11 +112,11 @@ class SelectAccountViewModel @Inject constructor(
         }
     }
 
-    fun refreshAccounts() {
+    override fun refreshAccounts() {
         loadSavedAccounts()
     }
 
-    fun removeAccount(email: String) {
+    override fun removeAccount(email: String) {
         viewModelScope.launch {
             try {
                 _savedAccounts.value = _savedAccounts.value.filter { it != email }
@@ -126,7 +126,7 @@ class SelectAccountViewModel @Inject constructor(
         }
     }
 
-    fun addAccount(email: String) {
+    override fun addAccount(email: String) {
         viewModelScope.launch {
             try {
                 if (!_savedAccounts.value.contains(email)) {
@@ -137,4 +137,10 @@ class SelectAccountViewModel @Inject constructor(
             }
         }
     }
+}
+
+class FSelectAccountViewModel: ViewModel(), ISelectAccountViewModel {
+    override val savedAccounts: StateFlow<List<String>> = MutableStateFlow(listOf("test1@example.com", "test2@example.com")).asStateFlow()
+    override val isLoading: StateFlow<Boolean> = MutableStateFlow(false).asStateFlow()
+
 }

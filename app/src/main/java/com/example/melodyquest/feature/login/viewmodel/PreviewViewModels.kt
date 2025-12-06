@@ -210,46 +210,7 @@ class PreviewAuthViewModel : ViewModel(), IAuthViewModel {
 
 
 // ========== PREVIEW SELECT ACCOUNT VIEWMODEL ==========
-/**
- * ViewModel para previews que simula comportamiento sin Firebase
- */
 
-class PreviewSelectAccountViewModel : ViewModel(), ISelectAccountViewModel {
-
-    private val _savedAccounts = MutableStateFlow<List<String>>(
-        listOf(
-            "arthur.cd@melodiquest.com",
-            "conan.doyle@melodiquest.com"
-        )
-    )
-    override val savedAccounts: StateFlow<List<String>> = _savedAccounts.asStateFlow()
-
-    private val _isLoading = MutableStateFlow(false)
-    override val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
-    override fun refreshAccounts() {
-        // No-op para preview
-    }
-
-    override fun removeAccount(email: String) {
-        _savedAccounts.value = _savedAccounts.value.filter { it != email }
-    }
-
-    override fun addAccount(email: String) {
-        if (!_savedAccounts.value.contains(email)) {
-            _savedAccounts.value = _savedAccounts.value + email
-        }
-    }
-
-    // Método auxiliar para configurar previews
-    fun setPreviewAccounts(accounts: List<String>) {
-        _savedAccounts.value = accounts
-    }
-
-    fun setIsLoading(isLoading: Boolean) {
-        _isLoading.value = isLoading
-    }
-}
 
 
 // ========== EJEMPLOS DE USO EN PREVIEWS ==========
@@ -404,36 +365,3 @@ fun SelectAccountScreenEmptyPreview() {
 */
 
 // ========== FACTORY PARA CREAR VIEWMODELS ==========
-object PreviewViewModelFactory {
-
-    fun createAuthViewModel(
-        isLoading: Boolean = false,
-        errorMessage: String? = null,
-        isAuthenticated: Boolean = false,
-        currentUser: User? = null
-    ): PreviewAuthViewModel {
-        return PreviewAuthViewModel().apply {
-            setPreviewState(
-                isLoading = isLoading,
-                errorMessage = errorMessage,
-                isAuthenticated = isAuthenticated,
-                currentUser = currentUser
-            )
-        }
-    }
-
-    fun createSelectAccountViewModel(
-        accounts: List<String> = listOf(
-            "arthur.cd@melodiquest.com",
-            "conan.doyle@melodiquest.com"
-        ),
-        isLoading: Boolean = false
-    ): PreviewSelectAccountViewModel {
-        return PreviewSelectAccountViewModel().apply {
-            setPreviewAccounts(accounts)
-            // La carga inicial ya está manejada por el init del ViewModel.
-            // Si se necesita un estado de carga explícito para el preview:
-            if (isLoading) setIsLoading(true)
-        }
-    }
-}

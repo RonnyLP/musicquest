@@ -8,7 +8,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.melodyquest.feature.home.ui.HomeScreen
 import com.example.melodyquest.feature.login.ui.FullLoginScreen
-import com.example.melodyquest.feature.login.ui.LoginScreen
 import com.example.melodyquest.feature.login.ui.PasswordLoginScreen
 import com.example.melodyquest.feature.login.ui.RegisterScreen
 import com.example.melodyquest.feature.login.ui.SelectAccountScreen
