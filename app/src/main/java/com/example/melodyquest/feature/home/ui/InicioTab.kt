@@ -1,7 +1,6 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 package com.example.melodyquest.feature.home.ui
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,13 +43,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.melodyquest.core.theme.Green500
 import com.example.melodyquest.core.ui.components.GrayButton
 import com.example.melodyquest.core.ui.components.GreenButton
 import com.example.melodyquest.core.ui.components.RedButton
 import com.example.melodyquest.core.ui.icons.AppIcons
 import com.example.melodyquest.core.ui.icons.Search
 import com.example.melodyquest.core.ui.icons.ThreeDots
+import com.example.melodyquest.feature.home.viewmodel.FakeInicioTabViewModel
+import com.example.melodyquest.feature.home.viewmodel.IInicioTabViewModel
 import com.example.melodyquest.feature.home.viewmodel.InicioEvent
 import com.example.melodyquest.feature.home.viewmodel.InicioTabViewModel
 
@@ -59,8 +60,9 @@ import com.example.melodyquest.feature.home.viewmodel.InicioTabViewModel
     backgroundColor = 0xFFFFFFFF
 )
 @Composable
-fun InicioTabPreview() {
+fun InicioTabPreview(fakeViewModel: IInicioTabViewModel = FakeInicioTabViewModel()) {
     InicioTab(
+        vm = fakeViewModel,
         innerPadding = PaddingValues(0.dp)
     )
 }
@@ -69,18 +71,20 @@ fun InicioTabPreview() {
 @Composable
 fun InicioTab(
     innerPadding: PaddingValues,
-    inicioTabViewModel: InicioTabViewModel = hiltViewModel(),
+    vm: IInicioTabViewModel = hiltViewModel<InicioTabViewModel>(),
     onNavigateToPlayer: () -> Unit = {}
 ) {
 
     LaunchedEffect(Unit) {
-        inicioTabViewModel.events.collect { event ->
+        vm.events.collect { event ->
             when (event) {
                 is InicioEvent.NavigateToPlayer -> onNavigateToPlayer()
             }
         }
 
     }
+
+    val tracks by vm.tracks.collectAsState()
 
 
     Column(
@@ -93,24 +97,25 @@ fun InicioTab(
 
         SearchWrapper()
 
-        GreenButton("Agregar", { inicioTabViewModel.openAddDialog() })
+        GreenButton("Agregar", { vm.openAddDialog() })
 
         Spacer(Modifier.height(16.dp))
 
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(inicioTabViewModel.progresionesGuardadas) { prog ->
+//            items(inicioTabViewModel.progresionesGuardadas) { prog ->
+            items(tracks) { track ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .padding(16.dp, 0.dp)
                         .clickable {
-                            inicioTabViewModel.navigateToPlayer()
+                            vm.navigateToPlayer()
                         }
                 ) {
                     Text(
-                        prog,
+                        track.name,
                         modifier =  Modifier
                             .weight(1f)
                     )
@@ -118,7 +123,7 @@ fun InicioTab(
                         modifier = Modifier
 //                            .size(32.dp)
                             .clickable {
-                                inicioTabViewModel.openEditDialog()
+                                vm.openEditDialog(track.id)
                             }
                     ) {
                         Icon(
@@ -137,17 +142,17 @@ fun InicioTab(
         }
 
         AgregarDialog(
-            inicioTabViewModel.isAddDialogOpen.value,
-            onDismiss = { inicioTabViewModel.closeAddDialog() },
-            onSubmit = { inicioTabViewModel.closeAddDialog() }
+            vm.isAddDialogOpen.value,
+            onDismiss = { vm.closeAddDialog() },
+            onSubmit = { vm.closeAddDialog() }
         )
 
 
         EditarDialog(
-            inicioTabViewModel.isEditDialogOpen.value,
-            onDismiss = { inicioTabViewModel.closeEditDialog() },
-            onEdit = { inicioTabViewModel.closeEditDialog() },
-            onDelete = { inicioTabViewModel.closeEditDialog() }
+            vm.isEditDialogOpen.value,
+            onDismiss = { vm.closeEditDialog() },
+            onEdit = { vm.closeEditDialog() },
+            onDelete = { vm.closeEditDialog() }
         )
     }
 }

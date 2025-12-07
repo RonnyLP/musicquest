@@ -37,5 +37,7 @@ interface TrackDAO {
     @Query("DELETE FROM Track WHERE ownerEmail = :email")
     suspend fun deleteTracksForUser(email: String)
 
+    @Query("SELECT * FROM Track WHERE ownerEmail = :email")
+    fun getTracksFlow(email: String): Flow<List<Track>>
 
 }

@@ -4,6 +4,7 @@ import com.example.melodyquest.data.auth.FirebaseAuthRepository
 import com.example.melodyquest.domain.auth.AuthRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -11,23 +12,9 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 
-//@Module
-//@InstallIn(SingletonComponent::class)
-//object AuthModule {
-//
-//
-//    @Provides
-//    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
-//
-//    @Provides fun provideAuthRepository(
-//        firebaseAuth: FirebaseAuth
-//    ): AuthRepository = FirebaseAuthRepository(firebaseAuth)
-//
-//}
-
 @Module
 @InstallIn(SingletonComponent::class)
-object AuthModule {
+object FirebaseModule {
 
     @Provides
     @Singleton
@@ -47,5 +34,11 @@ object AuthModule {
     @Singleton
     fun provideFirebaseDatabase(): FirebaseDatabase {
         return FirebaseDatabase.getInstance()
+    }
+
+    @Provides
+    @Singleton
+    fun provideFirebaseFirestore(): FirebaseFirestore {
+        return FirebaseFirestore.getInstance()
     }
 }

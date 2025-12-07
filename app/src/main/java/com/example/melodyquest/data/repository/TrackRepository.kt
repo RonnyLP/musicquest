@@ -42,4 +42,9 @@ class TrackRepository @Inject constructor(
         remote.deleteTrack(email, track.id)
         trackDao.deleteTrack(track)
     }
+
+
+    fun getTracksFlow(email: String): Flow<List<Track>> =
+        trackDao.getTracksFlow(email)
+
 }
