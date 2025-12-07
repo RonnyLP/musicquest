@@ -42,13 +42,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.melodyquest.core.ui.components.GrayButton
 import com.example.melodyquest.core.ui.components.GreenButton
 import com.example.melodyquest.core.ui.components.RedButton
 import com.example.melodyquest.core.ui.icons.AppIcons
 import com.example.melodyquest.core.ui.icons.Search
 import com.example.melodyquest.core.ui.icons.ThreeDots
+import com.example.melodyquest.data.local.entity.Track
 import com.example.melodyquest.feature.home.viewmodel.FakeInicioTabViewModel
 import com.example.melodyquest.feature.home.viewmodel.IInicioTabViewModel
 import com.example.melodyquest.feature.home.viewmodel.InicioEvent
@@ -60,7 +60,8 @@ import com.example.melodyquest.feature.home.viewmodel.InicioTabViewModel
     backgroundColor = 0xFFFFFFFF
 )
 @Composable
-fun InicioTabPreview(fakeViewModel: IInicioTabViewModel = FakeInicioTabViewModel()) {
+fun InicioTabPreview(fakeViewModel: IInicioTabViewModel = FakeInicioTabViewModel(false, true)) {
+
     InicioTab(
         vm = fakeViewModel,
         innerPadding = PaddingValues(0.dp)
@@ -85,6 +86,8 @@ fun InicioTab(
     }
 
     val tracks by vm.tracks.collectAsState()
+//    val tempTrack by vm.tempTrack.collectAsState()
+
 
 
     Column(
@@ -142,17 +145,21 @@ fun InicioTab(
         }
 
         AgregarDialog(
-            vm.isAddDialogOpen.value,
+            agregarDialogOpen = vm.isAddDialogOpen.value,
+            tempTrack = vm.tempTrack.value,
+            editName = { vm.trackEditor.setName(it) },
             onDismiss = { vm.closeAddDialog() },
-            onSubmit = { vm.closeAddDialog() }
+            onSubmit = { vm.submitAddDialog() }
         )
 
 
         EditarDialog(
-            vm.isEditDialogOpen.value,
+            editarDialog = vm.isEditDialogOpen.value,
+            tempTrack = vm.tempTrack.value,
+            changeTempName = { vm.trackEditor.setName(it) },
             onDismiss = { vm.closeEditDialog() },
-            onEdit = { vm.closeEditDialog() },
-            onDelete = { vm.closeEditDialog() }
+            onEdit = { vm.submitEditDialog() },
+            onDelete = { vm.submitDeleteDialog() }
         )
     }
 }
@@ -216,11 +223,13 @@ fun SearchWrapper() {
 
 @Composable
 fun AgregarDialog(
-    agregarDialog: Boolean,
+    tempTrack: Track,
+    agregarDialogOpen: Boolean,
+    editName: (String) -> Unit,
     onDismiss: () -> Unit,
     onSubmit: () -> Unit
 ) {
-    if (agregarDialog) {
+    if (agregarDialogOpen) {
         Dialog(
             onDismissRequest = { onDismiss() },
 
@@ -235,8 +244,10 @@ fun AgregarDialog(
             ) {
                 Text("Nombre")
                 BasicTextField(
-                    value = "Californication",
-                    onValueChange = {},
+                    value = tempTrack.name,
+                    onValueChange = {
+                        editName(it)
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .border(
@@ -338,6 +349,8 @@ fun AgregarDialog(
 @Composable
 fun EditarDialog(
     editarDialog: Boolean,
+    tempTrack: Track,
+    changeTempName: (String) -> Unit,
     onDismiss: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
@@ -356,8 +369,8 @@ fun EditarDialog(
             ) {
                 Text("Nombre")
                 BasicTextField(
-                    value = "Californication",
-                    onValueChange = {},
+                    value = tempTrack.name,
+                    onValueChange = { changeTempName(it) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .border(

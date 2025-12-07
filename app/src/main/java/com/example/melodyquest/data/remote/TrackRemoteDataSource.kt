@@ -38,10 +38,14 @@ class TrackRemoteDataSource @Inject constructor(
 
 
     suspend fun addTrack(email: String, track: Track) {
-        tracksCollection(email).document(track.id).set(
+        val newRef = tracksCollection(email).document()
+//        val id = newRef.id
+//        track.id = newRef.id
+
+        newRef.set(
             mapOf(
                 "name" to track.name,
-                "data" to Json.encodeToString(value = track.data)
+                "data" to Json.encodeToString(track.data)
             )
         ).await()
     }
@@ -49,4 +53,17 @@ class TrackRemoteDataSource @Inject constructor(
     suspend fun deleteTrack(email: String, trackId: String) {
         tracksCollection(email).document(trackId).delete().await()
     }
+
+    suspend fun updateTrack(email: String, track: Track) {
+        println("Updating track: ${track.id}")
+        tracksCollection(email)
+            .document(track.id)
+            .set(
+            mapOf(
+                "name" to track.name,
+                "data" to Json.encodeToString(track.data)
+            )
+        ).await()
+    }
+
 }

@@ -18,8 +18,8 @@ import com.example.melodyquest.domain.model.TrackConfiguration
 //    indices = [Index("ownerEmail")]
 )
 data class Track(
-    @PrimaryKey val id: String,
-    @ColumnInfo(name = "name") val name: String,
-    @ColumnInfo(name = "data") val data: TrackConfiguration,
+    @PrimaryKey var id: String,
+    @ColumnInfo(name = "name") var name: String,
+    @ColumnInfo(name = "data") var data: TrackConfiguration,
     @ColumnInfo(name = "ownerEmail") val ownerEmail: String
 )

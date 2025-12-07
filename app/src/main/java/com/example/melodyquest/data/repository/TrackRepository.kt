@@ -43,6 +43,11 @@ class TrackRepository @Inject constructor(
         trackDao.deleteTrack(track)
     }
 
+    suspend fun updateTrack(email: String, track: Track) {
+        remote.updateTrack(email, track)
+        trackDao.updateTrack(track)
+    }
+
 
     fun getTracksFlow(email: String): Flow<List<Track>> =
         trackDao.getTracksFlow(email)

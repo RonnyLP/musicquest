@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.melodyquest.data.local.entity.Track
 import com.example.melodyquest.data.repository.TrackRepository
@@ -20,22 +19,37 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
+
+
+interface TrackQuickEditor {
+    fun setName(name: String) {}
+    fun setData(data: TrackConfiguration) {}
+}
 
 interface IInicioTabViewModel {
     val tracks: StateFlow<List<Track>>
     val events: SharedFlow<InicioEvent>
     fun navigateToPlayer() {}
 
-    val progresionesGuardadas: List<String>
+    val trackEditor: TrackQuickEditor
+
+
+    val tempTrack: State<Track>
+    var tempName: State<String>
 
     val isAddDialogOpen: State<Boolean>
     fun openAddDialog() {}
     fun closeAddDialog() {}
+    fun submitAddDialog() {}
 
     val isEditDialogOpen: State<Boolean>
     fun openEditDialog(trackId: String) {}
     fun closeEditDialog() {}
+    fun submitEditDialog() {}
+    fun submitDeleteDialog() {}
 }
 
 @HiltViewModel
@@ -44,7 +58,6 @@ class InicioTabViewModel @Inject constructor(
     private val trackRepository: TrackRepository
 ) : ViewModel(), IInicioTabViewModel {
 
-    /* Eventos de navegación */
 
     private val email: String? = authRepository.getCurrentUser()?.email
 
@@ -55,7 +68,17 @@ class InicioTabViewModel @Inject constructor(
     } else {
         MutableStateFlow(emptyList())
     }
-//        trackRepository.getAllTracks(email!!)
+
+
+    override val tempTrack = mutableStateOf(Track(
+        id = "",
+        name = "",
+        data = TrackConfiguration(),
+        ownerEmail = email ?: ""
+    ))
+
+
+    override var tempName: State<String> = mutableStateOf("")
 
 
     init {
@@ -80,17 +103,6 @@ class InicioTabViewModel @Inject constructor(
         }
     }
 
-    override val progresionesGuardadas = listOf(
-        "Everlong",
-        "Canon de Pachenbel",
-        "Creep",
-        "Misplaced",
-    )
-
-//    val _progressionList: StateFlow<List<Track>> = trackRepository.getAllTracks()
-//        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-//        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
     override val isAddDialogOpen = mutableStateOf(false)
 
     override fun openAddDialog() {
@@ -104,10 +116,77 @@ class InicioTabViewModel @Inject constructor(
 
     override fun openEditDialog(trackId: String) {
         isEditDialogOpen.value = true
+        val foundTrack = tracks.value.find { it.id == trackId }
+        println("Found track: ${foundTrack?.id}")
+        if (foundTrack == null) {
+            isEditDialogOpen.value = false
+            return
+        }
+
+        val configCopy = Json.decodeFromString<TrackConfiguration>(
+            Json.encodeToString(foundTrack.data)
+        )
+
+        tempTrack.value = foundTrack.copy(
+            data = configCopy
+        )
+        println("TempTrack.id = ${tempTrack.value.id}")
+        println("TempTrack.id = ${tempTrack.value.name}")
+
     }
     override fun closeEditDialog() {
         isEditDialogOpen.value = false
+        resetTempTrack()
     }
+
+    override fun submitAddDialog() {
+        viewModelScope.launch {
+            email?.let { trackRepository.addTrack(it, tempTrack.value.name, tempTrack.value.data) }
+            resetTempTrack()
+            closeAddDialog()
+        }
+
+    }
+
+
+    override val trackEditor = object : TrackQuickEditor {
+        override fun setName(name: String) {
+            tempTrack.value = tempTrack.value.copy(name = name)
+        }
+
+        override fun setData(data: TrackConfiguration) {
+            tempTrack.value = tempTrack.value.copy(data = data)
+        }
+    }
+
+    override fun submitEditDialog() {
+        viewModelScope.launch {
+            if (email == null) return@launch
+            trackRepository.updateTrack(email, tempTrack.value)
+            resetTempTrack()
+        }
+        closeEditDialog()
+    }
+
+    override fun submitDeleteDialog() {
+        viewModelScope.launch {
+            if (email == null) return@launch
+            trackRepository.deleteTrack(email, tempTrack.value)
+            resetTempTrack()
+        }
+        closeEditDialog()
+    }
+
+
+    fun resetTempTrack() {
+        tempTrack.value = Track(
+            id = "",
+            name = "",
+            ownerEmail = email ?: "",
+            data = TrackConfiguration()
+        )
+    }
+
 
 
 }
@@ -120,7 +199,10 @@ sealed interface InicioEvent {
 
 
 
-class FakeInicioTabViewModel : ViewModel(), IInicioTabViewModel {
+class FakeInicioTabViewModel(
+    openAddDialog: Boolean = false,
+    editAddDialog: Boolean = false
+): ViewModel(), IInicioTabViewModel {
     override val tracks: StateFlow<List<Track>> = MutableStateFlow(
         listOf(
             Track(
@@ -137,8 +219,15 @@ class FakeInicioTabViewModel : ViewModel(), IInicioTabViewModel {
             )
         )
     )
+    override val tempTrack = mutableStateOf(Track(
+        id = "",
+        name = "",
+        data = TrackConfiguration(),
+        ownerEmail = ""
+    ))
+    override var tempName: State<String> = mutableStateOf("")
     override val events: SharedFlow<InicioEvent> = MutableSharedFlow()
-    override val progresionesGuardadas: List<String> = listOf("Everlong", "Canon de Pachenbel", "Creep", "Misplaced")
-    override val isAddDialogOpen: State<Boolean> = mutableStateOf(false)
-    override val isEditDialogOpen: State<Boolean> = mutableStateOf(false)
+    override val isAddDialogOpen: State<Boolean> = mutableStateOf(openAddDialog)
+    override val isEditDialogOpen: State<Boolean> = mutableStateOf(editAddDialog)
+    override val trackEditor: TrackQuickEditor = object : TrackQuickEditor {}
 }
