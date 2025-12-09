@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.lifecycle.ViewModel
 import android.util.Log
+import androidx.compose.runtime.State
 import com.example.melodyquest.domain.model.ChordConfig
 import com.example.melodyquest.service.TrackPlayerService
 import com.example.melodyquest.domain.model.ChordType
@@ -17,28 +18,50 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
+
+
+interface ITrackPlayerViewModel {
+
+
+    val isReady: StateFlow<Boolean>
+    val state: StateFlow<TrackPlayerState>
+
+    fun transposeTrack(offset: Int) {}
+
+    fun playOrPause() {}
+
+    fun startChordChanges(chordIdx: Int) {}
+    fun saveNoteChanges() {}
+    fun cancelNoteChanges() {}
+
+    fun onEvent(event: TrackPlayerEvent) {}
+    val publicEvents: SharedFlow<TrackPlayerPublicEvent>
+    fun getDisplayChordName(chordConfig: ChordConfig): String = "A"
+}
 
 
 @HiltViewModel
 class TrackPlayerViewModel @Inject constructor(
     private val trackPlayer: TrackPlayerInterface,
     @ApplicationContext private val context: Context
-): ViewModel() {
+): ViewModel(), ITrackPlayerViewModel {
 
 
     private var _state = MutableStateFlow(TrackPlayerState())
-    val state = _state.asStateFlow()
+    override val state = _state.asStateFlow()
 
-    val isReady = trackPlayer.isReady
+    override val isReady = trackPlayer.isReady
 
 
 //    private val _activeChord = mutableStateOf<ChordConfig?>(null)
 //    val activeChord: State<ChordConfig?> = _activeChord
 
-    fun transposeTrack(offset: Int) {
+    override fun transposeTrack(offset: Int) {
         val currentTrackConfig = _state.value.trackConfiguration
         val newProgression = currentTrackConfig.progressionConfig.map { chordConfig ->
             val newRootSemitone = (chordConfig.root.semitone + offset).let {
@@ -57,7 +80,7 @@ class TrackPlayerViewModel @Inject constructor(
 
 
 
-    fun playOrPause() {
+    override fun playOrPause() {
         if (this._state.value.isPlaying) {
             trackPlayer.pauseTrack()
         } else {
@@ -72,7 +95,7 @@ class TrackPlayerViewModel @Inject constructor(
 
 //    private var _editingChordIdx: Int? = null
 
-    fun startChordChanges(chordIdx: Int) {
+    override fun startChordChanges(chordIdx: Int) {
         _state.value = _state.value.copy(
             showChordEditionDialog = true,
             activeChordConfig = _state.value.trackConfiguration.progressionConfig[chordIdx],
@@ -81,11 +104,11 @@ class TrackPlayerViewModel @Inject constructor(
 
     }
 
-    fun saveNoteChanges() {
+    override fun saveNoteChanges() {
 
     }
 
-    fun cancelNoteChanges() {
+    override fun cancelNoteChanges() {
         _state.value = _state.value.copy(
             showChordEditionDialog = false,
             activeChordConfig = null,
@@ -100,15 +123,14 @@ class TrackPlayerViewModel @Inject constructor(
         replay = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
-    val publicEvents = _publicEvents.asSharedFlow()
+    override val publicEvents = _publicEvents.asSharedFlow()
 
-
-    fun getDisplayChordName(chordConfig: ChordConfig): String {
+    override fun getDisplayChordName(chordConfig: ChordConfig): String {
 //        return chordConfig.root.getDisplayName(_state.value.useFlat) + " " + chordConfig.type.chordName
         return chordConfig.type.getAbbrName(chordConfig.root)
     }
 
-    fun onEvent(event: TrackPlayerEvent) {
+    override fun onEvent(event: TrackPlayerEvent) {
         when (event) {
             TrackPlayerEvent.NavigateBack -> {
                 val emitted = _publicEvents.tryEmit(TrackPlayerPublicEvent.NavigateBack)
@@ -146,6 +168,11 @@ class TrackPlayerViewModel @Inject constructor(
                     trackConfiguration = _state.value.trackConfiguration.copy(
                         metronomeCountIn = !_state.value.trackConfiguration.metronomeCountIn
                     )
+                )
+            }
+            TrackPlayerEvent.ToggleExtraOptions -> {
+                _state.value = _state.value.copy(
+                    areExtraOptionsShown = !_state.value.areExtraOptionsShown
                 )
             }
             is TrackPlayerEvent.EditTempChordType -> {
@@ -225,6 +252,7 @@ sealed class TrackPlayerEvent {
     object TransposeDown : TrackPlayerEvent()
 
     object ToggleMetronome : TrackPlayerEvent()
+    object ToggleExtraOptions : TrackPlayerEvent()
     object ToggleMetronomeCountIn : TrackPlayerEvent()
 }
 
@@ -234,6 +262,7 @@ sealed class TrackPlayerPublicEvent {
 
 data class TrackPlayerState (
     var isPlaying: Boolean = false,
+    var areExtraOptionsShown: Boolean = false,
     var trackConfiguration: TrackConfiguration = TrackConfiguration(
         progressionConfig = listOf(
             ChordConfig(
@@ -295,3 +324,21 @@ data class TrackPlayerState (
     var useFlat: Boolean = false,
     val timeSignatureDropdownEnabled: Boolean = false
 )
+
+
+class FakeTrackPlayerViewModel(
+    showExtraOptions: Boolean = false
+): ViewModel(), ITrackPlayerViewModel {
+
+    private val _state = MutableStateFlow(TrackPlayerState(areExtraOptionsShown = showExtraOptions))
+    override val state = _state.asStateFlow()
+
+    override val isReady = MutableStateFlow(true)
+
+    override val publicEvents = MutableSharedFlow<TrackPlayerPublicEvent>(
+        replay = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+
+
+}
