@@ -1,20 +1,14 @@
 package com.example.melodyquest.feature.trackplayer.viewmodel
 
-import android.content.Context
-import android.content.Intent
 import androidx.lifecycle.ViewModel
 import android.util.Log
-import androidx.compose.runtime.State
 import com.example.melodyquest.domain.model.ChordConfig
-import com.example.melodyquest.service.TrackPlayerService
-import com.example.melodyquest.domain.model.ChordType
 import com.example.melodyquest.domain.model.ChordTypes
 import com.example.melodyquest.domain.model.Notes
 import com.example.melodyquest.domain.model.TimeSignature
 import com.example.melodyquest.domain.model.TrackConfiguration
 import com.example.melodyquest.domain.trackplayer.TrackPlayerInterface
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,19 +30,19 @@ interface ITrackPlayerViewModel {
     fun playOrPause() {}
 
     fun startChordChanges(chordIdx: Int) {}
-    fun saveNoteChanges() {}
-    fun cancelNoteChanges() {}
+    fun saveChordChanges() {}
+    fun cancelChordChanges() {}
 
     fun onEvent(event: TrackPlayerEvent) {}
     val publicEvents: SharedFlow<TrackPlayerPublicEvent>
-    fun getDisplayChordName(chordConfig: ChordConfig): String = "A"
+    fun getDisplayChordName(chordConfig: ChordConfig): String = chordConfig.type.getAbbrName(chordConfig.root)
 }
 
 
 @HiltViewModel
 class TrackPlayerViewModel @Inject constructor(
     private val trackPlayer: TrackPlayerInterface,
-    @ApplicationContext private val context: Context
+//    @ApplicationContext private val context: Context
 ): ViewModel(), ITrackPlayerViewModel {
 
 
@@ -96,23 +90,38 @@ class TrackPlayerViewModel @Inject constructor(
 //    private var _editingChordIdx: Int? = null
 
     override fun startChordChanges(chordIdx: Int) {
+        val originalChordConfig =_state.value.trackConfiguration.progressionConfig[chordIdx]
         _state.value = _state.value.copy(
             showChordEditionDialog = true,
-            activeChordConfig = _state.value.trackConfiguration.progressionConfig[chordIdx],
-            activeChordIdx = chordIdx
+            tempChordConfig = originalChordConfig.copy(),
+            tempChordIdx = chordIdx
         )
 
     }
 
-    override fun saveNoteChanges() {
-
-    }
-
-    override fun cancelNoteChanges() {
+    override fun saveChordChanges() {
+//        val originalTrackConfig = _state.value.trackConfiguration
+//        val trackConfigCopy = originalTrackConfig.copy(
+//            progressionConfig = originalTrackConfig.progressionConfig
+//        )
         _state.value = _state.value.copy(
             showChordEditionDialog = false,
-            activeChordConfig = null,
-            activeChordIdx = null
+            trackConfiguration = _state.value.trackConfiguration.copy(
+                progressionConfig = _state.value.trackConfiguration.progressionConfig
+                    .mapIndexed { index, chord ->
+                        if (index == _state.value.tempChordIdx) _state.value.tempChordConfig!! else chord
+                    }
+            ),
+            tempChordConfig = null,
+            tempChordIdx = null
+        )
+    }
+
+    override fun cancelChordChanges() {
+        _state.value = _state.value.copy(
+            showChordEditionDialog = false,
+            tempChordConfig = null,
+            tempChordIdx = null
         )
     }
 
@@ -125,10 +134,9 @@ class TrackPlayerViewModel @Inject constructor(
     )
     override val publicEvents = _publicEvents.asSharedFlow()
 
-    override fun getDisplayChordName(chordConfig: ChordConfig): String {
-//        return chordConfig.root.getDisplayName(_state.value.useFlat) + " " + chordConfig.type.chordName
-        return chordConfig.type.getAbbrName(chordConfig.root)
-    }
+//    override fun getDisplayChordName(chordConfig: ChordConfig): String {
+//        return chordConfig.type.getAbbrName(chordConfig.root)
+//    }
 
     override fun onEvent(event: TrackPlayerEvent) {
         when (event) {
@@ -148,12 +156,19 @@ class TrackPlayerViewModel @Inject constructor(
             TrackPlayerEvent.PlayOrPause -> {
                 playOrPause()
             }
+            TrackPlayerEvent.AddChord -> {
+                _state.value = _state.value.copy(
+                    trackConfiguration = _state.value.trackConfiguration.copy(
+                        progressionConfig = _state.value.trackConfiguration.progressionConfig + ChordConfig(Notes.C, 4, ChordTypes.MAJOR, 4)
+                    )
+                )
+            }
             is TrackPlayerEvent.ShowChordDialog -> {
                 startChordChanges(event.chordIdx)
             }
             is TrackPlayerEvent.EditTempRoot -> {
                 _state.value = _state.value.copy(
-                    activeChordConfig = _state.value.activeChordConfig?.copy(root = Notes.fromSemitone(event.rootIdx)!!)
+                    tempChordConfig = _state.value.tempChordConfig?.copy(root = Notes.fromSemitone(event.rootIdx)!!)
                 )
             }
             TrackPlayerEvent.ToggleMetronome -> {
@@ -177,17 +192,17 @@ class TrackPlayerViewModel @Inject constructor(
             }
             is TrackPlayerEvent.EditTempChordType -> {
                 _state.value = _state.value.copy(
-                    activeChordConfig = _state.value.activeChordConfig?.copy(type = ChordTypes.entries[event.chordTypeIdx])
+                    tempChordConfig = _state.value.tempChordConfig?.copy(type = ChordTypes.entries[event.chordTypeIdx])
                 )
             }
             is TrackPlayerEvent.EditTempOctave -> {
                 _state.value = _state.value.copy(
-                    activeChordConfig = _state.value.activeChordConfig?.copy(octave = event.octave)
+                    tempChordConfig = _state.value.tempChordConfig?.copy(octave = event.octave)
                 )
             }
             is TrackPlayerEvent.EditTempDuration -> {
                 _state.value = _state.value.copy(
-                    activeChordConfig = _state.value.activeChordConfig?.copy(durationBeats = event.duration)
+                    tempChordConfig = _state.value.tempChordConfig?.copy(durationBeats = event.duration)
                 )
             }
             is TrackPlayerEvent.UpdateTimeSignature -> {
@@ -214,10 +229,10 @@ class TrackPlayerViewModel @Inject constructor(
 
 
             TrackPlayerEvent.SuccessChordDialog -> {
-                saveNoteChanges()
+                saveChordChanges()
             }
             TrackPlayerEvent.DismissChordDialog -> {
-                cancelNoteChanges()
+                cancelChordChanges()
             }
             TrackPlayerEvent.TransposeDown -> {
                 transposeTrack(-1)
@@ -250,6 +265,7 @@ sealed class TrackPlayerEvent {
     object NavigateBack : TrackPlayerEvent()
     object TransposeUp : TrackPlayerEvent()
     object TransposeDown : TrackPlayerEvent()
+    object AddChord : TrackPlayerEvent()
 
     object ToggleMetronome : TrackPlayerEvent()
     object ToggleExtraOptions : TrackPlayerEvent()
@@ -264,61 +280,12 @@ data class TrackPlayerState (
     var isPlaying: Boolean = false,
     var areExtraOptionsShown: Boolean = false,
     var trackConfiguration: TrackConfiguration = TrackConfiguration(
-        progressionConfig = listOf(
-            ChordConfig(
-                root = Notes.C,
-                type = ChordTypes.MAJOR,
-                octave = 4,
-                durationBeats = 4
-            ),
-            ChordConfig(
-                root = Notes.E,
-                type = ChordTypes.MAJOR,
-                octave = 4,
-                durationBeats = 4
-            ),
-            ChordConfig(
-                root = Notes.G,
-                type = ChordTypes.MAJOR,
-                octave = 4,
-                durationBeats = 4
-            ),
-            ChordConfig(
-                root = Notes.C,
-                type = ChordTypes.MAJOR,
-                octave = 5,
-                durationBeats = 4
-            ),
-            ChordConfig(
-                root = Notes.C,
-                type = ChordTypes.MAJOR,
-                octave = 4,
-                durationBeats = 4
-            ),
-            ChordConfig(
-                root = Notes.E,
-                type = ChordTypes.MAJOR,
-                octave = 4,
-                durationBeats = 4
-            ),
-            ChordConfig(
-                root = Notes.G,
-                type = ChordTypes.MAJOR,
-                octave = 4,
-                durationBeats = 4
-            ),
-            ChordConfig(
-                root = Notes.C,
-                type = ChordTypes.MAJOR,
-                octave = 5,
-                durationBeats = 4
-            )
-        )
+        progressionConfig = emptyList()
     ),
-    var activeChordConfig: ChordConfig? = null,
-    var activeChordIdx: Int? = null,
-    var noteNames: List<String> = emptyList(),
-    var chordNames: List<String> = emptyList(),
+    var tempChordConfig: ChordConfig? = null,
+    var tempChordIdx: Int? = null,
+//    var noteNames: List<String> = emptyList(),
+//    var chordNames: List<String> = emptyList(),
     var timeSignatures: List<TimeSignature> = TimeSignature.defaults,
     var showChordEditionDialog: Boolean = false,
     var useFlat: Boolean = false,
@@ -330,7 +297,25 @@ class FakeTrackPlayerViewModel(
     showExtraOptions: Boolean = false
 ): ViewModel(), ITrackPlayerViewModel {
 
-    private val _state = MutableStateFlow(TrackPlayerState(areExtraOptionsShown = showExtraOptions))
+    private val _state = MutableStateFlow(TrackPlayerState(
+        areExtraOptionsShown = showExtraOptions,
+        trackConfiguration = TrackConfiguration(
+            progressionConfig = listOf(
+                ChordConfig(
+                    root = Notes.C,
+                    type = ChordTypes.MAJOR,
+                    octave = 4,
+                    durationBeats = 4
+                ),
+                ChordConfig(
+                    root = Notes.E,
+                    type = ChordTypes.MAJOR,
+                    octave = 4,
+                    durationBeats = 4
+                )
+            )
+        )
+    ))
     override val state = _state.asStateFlow()
 
     override val isReady = MutableStateFlow(true)

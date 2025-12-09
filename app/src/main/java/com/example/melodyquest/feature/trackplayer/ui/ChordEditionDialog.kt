@@ -18,6 +18,7 @@ import androidx.compose.ui.window.Dialog
 import com.example.melodyquest.core.ui.components.GrayButton
 import com.example.melodyquest.core.ui.components.GreenButton
 import com.example.melodyquest.domain.model.ChordTypes
+import com.example.melodyquest.domain.model.Notes
 import com.example.melodyquest.feature.trackplayer.viewmodel.TrackPlayerEvent
 import com.example.melodyquest.feature.trackplayer.viewmodel.TrackPlayerState
 
@@ -48,11 +49,12 @@ fun ChordEditionDialog(
                     factory = { context ->
                         NumberPicker(context).apply {
                             minValue = 0
-                            maxValue = state.noteNames.size - 1
+                            maxValue = Notes.allNotes.size - 1
 //                                value = viewModel.activeNoteIdx(viewModel.activeChord.value!!.root)
-                            value = state.activeChordConfig!!.root.semitone
+                            value = state.tempChordConfig!!.root.semitone
 //                                displayedValues = viewModel.notesList.toTypedArray()
-                            displayedValues = state.noteNames.toTypedArray()
+//                            displayedValues = state.noteNames.toTypedArray()
+                            displayedValues = Notes.allNotes.map { it.getDisplayName(state.useFlat) }.toTypedArray()
                             setOnValueChangedListener { _, _, newNoteIdx ->
                                 onEvent(TrackPlayerEvent.EditTempRoot(newNoteIdx))
                             }
@@ -64,10 +66,10 @@ fun ChordEditionDialog(
                     factory = { context ->
                         NumberPicker(context).apply {
                             minValue = 0
-                            maxValue = state.chordNames.size - 1
+                            maxValue = ChordTypes.entries.size - 1
 //                            value = state.activeChordConfig!!.type.ordinal
-                            value = ChordTypes.ordinal(state.activeChordConfig!!.type)
-                            displayedValues = state.chordNames.toTypedArray()
+                            value = ChordTypes.ordinal(state.tempChordConfig!!.type)
+                            displayedValues = ChordTypes.entries.map{ it.chordName }.toTypedArray()
                             setOnValueChangedListener { _, _, newChordIdx ->
                                 onEvent(TrackPlayerEvent.EditTempChordType(newChordIdx))
                             }
@@ -81,7 +83,7 @@ fun ChordEditionDialog(
                         NumberPicker(context).apply {
                             minValue = 1
                             maxValue = 8
-                            value = state.activeChordConfig!!.durationBeats
+                            value = state.tempChordConfig!!.durationBeats
                             setOnValueChangedListener { _, _, newDuration ->
                                 onEvent(TrackPlayerEvent.EditTempDuration(newDuration))
                             }

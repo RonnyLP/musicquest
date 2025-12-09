@@ -155,6 +155,23 @@ fun TrackPlayerScreen(
                             Text(viewModel.getDisplayChordName(chordConfig))
                         }
                     }
+                    item {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .clickable {
+                                    onEvent(TrackPlayerEvent.AddChord)
+                                }
+                                .border(2.dp, Color.Black, shape = RoundedCornerShape(8.dp))
+                                .padding(0.dp, 24.dp)
+                                .width(160.dp)
+                                .fillMaxHeight()
+
+
+                        ) {
+                            Text("+")
+                        }
+                    }
 
                 }
             }
