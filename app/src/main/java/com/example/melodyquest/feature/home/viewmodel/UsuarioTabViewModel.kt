@@ -39,22 +39,19 @@ import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 
-
 @HiltViewModel
-
 class UsuarioTabViewModel @Inject constructor(
-    private val locationRepository: LocationRepository,
     private val auth: FirebaseAuth,
     private val database: FirebaseDatabase,
     private val application: Application
-) : ViewModel() {
+) : ViewModel(), IUsuarioTabViewModel {
 
     companion object {
         private const val TAG = "UsuarioTabViewModel"
     }
 
     private val _location = MutableStateFlow<UserLocation?>(null)
-    val location = _location.asStateFlow()
+    override val location = _location.asStateFlow()
 
     private val updateInterval = 10_000L
 
@@ -65,7 +62,7 @@ class UsuarioTabViewModel @Inject constructor(
 
     private var locationCallback: LocationCallback? = null
 
-    fun startLocationUpdates() {
+    override fun startLocationUpdates() {
         if (locationCallback != null) return
 
         val hasPermission = ActivityCompat.checkSelfPermission(
@@ -77,8 +74,6 @@ class UsuarioTabViewModel @Inject constructor(
             return
         }
 
-//        Log.d(TAG, "Iniciando seguimiento GPS desde el ViewModel...")
-//        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000L, 0f, locationListener)
         val locationRequest = LocationRequest.Builder(
             Priority.PRIORITY_HIGH_ACCURACY,
             updateInterval
@@ -87,10 +82,6 @@ class UsuarioTabViewModel @Inject constructor(
 
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
-//                result.lastLocation?.let { loc ->
-//                    _location.value = UserLocation(loc)
-//                    sendLocationToFirebase(loc)
-//                }
                 val lastLoc = result.lastLocation ?: return
 
                 val loc = UserLocation(lastLoc)
@@ -107,7 +98,7 @@ class UsuarioTabViewModel @Inject constructor(
             Looper.getMainLooper()
         )
     }
-    fun stopLocationUpdates() {
+    override fun stopLocationUpdates() {
         locationCallback?.let {
             fusedLocationClient.removeLocationUpdates(it)
         }
@@ -137,7 +128,7 @@ class UsuarioTabViewModel @Inject constructor(
     }
 
 
-    fun startGoogleAuth() {
+    override fun startGoogleAuth() {
 
     }
 

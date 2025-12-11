@@ -30,6 +30,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.melodyquest.core.ui.components.GreenButton
 import com.example.melodyquest.core.ui.icons.AppIcons
 import com.example.melodyquest.core.ui.icons.User
+import com.example.melodyquest.feature.home.viewmodel.FakeUsuarioTabViewModel
+import com.example.melodyquest.feature.home.viewmodel.IUsuarioTabViewModel
 import com.example.melodyquest.feature.home.viewmodel.UsuarioTabViewModel
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -41,15 +43,15 @@ import com.google.maps.android.compose.rememberMarkerState
 
 @Preview
 @Composable
-fun UsuarioTabPreview() {
-    UsuarioTab()
+fun UsuarioTabPreview(fakeVM: IUsuarioTabViewModel = FakeUsuarioTabViewModel()) {
+    UsuarioTab(usuarioTabViewModel = fakeVM)
 }
 
 
 @Composable
 fun UsuarioTab(
     innerPadding: PaddingValues = PaddingValues(0.dp),
-    usuarioTabViewModel: UsuarioTabViewModel = hiltViewModel()
+    usuarioTabViewModel: IUsuarioTabViewModel = hiltViewModel<UsuarioTabViewModel>()
 ) {
 
 

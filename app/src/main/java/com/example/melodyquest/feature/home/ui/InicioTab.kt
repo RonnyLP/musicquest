@@ -60,11 +60,11 @@ import com.example.melodyquest.feature.home.viewmodel.InicioTabViewModel
     backgroundColor = 0xFFFFFFFF
 )
 @Composable
-fun InicioTabPreview(fakeViewModel: IInicioTabViewModel = FakeInicioTabViewModel(false, true)) {
+fun InicioTabPreview(fakeViewModel: IInicioTabViewModel = FakeInicioTabViewModel(false, false), innerPadding: PaddingValues = PaddingValues(0.dp)) {
 
     InicioTab(
         vm = fakeViewModel,
-        innerPadding = PaddingValues(0.dp)
+        innerPadding = innerPadding
     )
 }
 
