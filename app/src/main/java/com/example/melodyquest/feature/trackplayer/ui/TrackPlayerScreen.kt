@@ -149,7 +149,7 @@ fun TrackPlayerScreen(
             .fillMaxSize()
             .background(Color.White)
     ) {
-        AppHeader("Título de la canción", "Atrás", { onEvent(TrackPlayerEvent.NavigateBack) })
+        AppHeader(state.trackname, "Atrás", { onEvent(TrackPlayerEvent.NavigateBack) })
 
 
 

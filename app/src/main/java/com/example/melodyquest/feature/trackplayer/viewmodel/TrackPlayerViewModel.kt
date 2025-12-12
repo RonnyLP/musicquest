@@ -102,7 +102,8 @@ class TrackPlayerViewModel @Inject constructor(
             if (foundTrack == null) return@launch
             track.value = foundTrack
             _state.value = _state.value.copy(
-                trackConfiguration = foundTrack.data
+                trackConfiguration = foundTrack.data,
+                trackname = foundTrack.name
             )
 //            track.value = track.value.copy(
 //                data = track.value?.data
@@ -373,6 +374,7 @@ sealed class TrackPlayerPublicEvent {
 
 data class TrackPlayerState (
     var isPlaying: Boolean = false,
+    var trackname: String = "",
     var areExtraOptionsShown: Boolean = false,
     var trackConfiguration: TrackConfiguration = TrackConfiguration(
         progressionConfig = emptyList()
