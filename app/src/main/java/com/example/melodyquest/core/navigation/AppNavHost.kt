@@ -106,6 +106,9 @@ fun AppNavHost(
             HomeScreen(
                 onNavigateToPlayer = { id ->
                     navController.navigate(Screen.Player.createRoute(id))
+                },
+                onNavigateToLogin = {
+                    navController.navigate(Screen.Welcome.route)
                 }
             )
         }

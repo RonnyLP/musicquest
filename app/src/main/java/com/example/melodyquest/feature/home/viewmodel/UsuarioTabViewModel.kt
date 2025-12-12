@@ -128,8 +128,11 @@ class UsuarioTabViewModel @Inject constructor(
     }
 
 
-    override fun startGoogleAuth() {
-
+    override fun cerrarSesion(callback: () -> Unit) {
+        auth.signOut()
+        _location.value = null
+        stopLocationUpdates()
+        callback()
     }
 
 }

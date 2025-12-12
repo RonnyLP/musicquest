@@ -21,7 +21,7 @@ class FakeUsuarioTabViewModel : ViewModel(), IUsuarioTabViewModel {
         stopLocationUpdatesCalled = true
     }
 
-    override fun startGoogleAuth() {
+    override fun cerrarSesion(callback: () -> Unit) {
         startGoogleAuthCalled = true
     }
 

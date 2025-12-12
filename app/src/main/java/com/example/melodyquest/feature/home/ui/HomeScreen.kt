@@ -39,6 +39,7 @@ fun HomeScreenPreview(
 fun HomeScreen(
     viewModel: IHomeScreenViewModel = viewModel<HomeScreenViewModel>(),
     onNavigateToPlayer: (id: String) -> Unit,
+    onNavigateToLogin: () -> Unit = {},
     preview: Boolean = false
 ) {
     val selectedTab = viewModel.selectedTab.value
@@ -79,7 +80,7 @@ fun HomeScreen(
             when (selectedTab) {
                 HomeTab.Inicio -> InicioTab(innerPadding, onNavigateToPlayer = onNavigateToPlayer)
                 HomeTab.Biblioteca -> BibliotecaTab(innerPadding, onNavigateToPlayer = onNavigateToPlayer)
-                HomeTab.Perfil -> UsuarioTab(innerPadding)
+                HomeTab.Perfil -> UsuarioTab(innerPadding, navigateToLogin = onNavigateToLogin)
             }
         }
     }

@@ -7,5 +7,5 @@ interface IUsuarioTabViewModel {
     val location: StateFlow<UserLocation?>
     fun startLocationUpdates()
     fun stopLocationUpdates()
-    fun startGoogleAuth()
+    fun cerrarSesion(callback: ()-> Unit)
 }

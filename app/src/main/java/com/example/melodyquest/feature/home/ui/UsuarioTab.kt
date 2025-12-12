@@ -4,7 +4,6 @@ import android.Manifest
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.launch
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,15 +18,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.melodyquest.core.ui.components.GreenButton
+import com.example.melodyquest.core.ui.components.RedButton
 import com.example.melodyquest.core.ui.icons.AppIcons
 import com.example.melodyquest.core.ui.icons.User
 import com.example.melodyquest.feature.home.viewmodel.FakeUsuarioTabViewModel
@@ -51,7 +49,8 @@ fun UsuarioTabPreview(fakeVM: IUsuarioTabViewModel = FakeUsuarioTabViewModel()) 
 @Composable
 fun UsuarioTab(
     innerPadding: PaddingValues = PaddingValues(0.dp),
-    usuarioTabViewModel: IUsuarioTabViewModel = hiltViewModel<UsuarioTabViewModel>()
+    usuarioTabViewModel: IUsuarioTabViewModel = hiltViewModel<UsuarioTabViewModel>(),
+    navigateToLogin: () -> Unit = {}
 ) {
 
 
@@ -80,9 +79,6 @@ fun UsuarioTab(
     val location = usuarioTabViewModel.location.collectAsState()
     val currentUserLocation = location.value
 
-    if (currentUserLocation != null) {
-        Text(currentUserLocation.latitude.toString()  + " " + currentUserLocation.longitude.toString())
-    }
 
 
     // 2. Crear el lanzador de solicitud de permisos
@@ -105,34 +101,7 @@ fun UsuarioTab(
             .fillMaxSize()
             .padding(16.dp, 32.dp)
     ) {
-        if (currentUserLocation == null) {
-            // --- Pantalla de "Iniciar sesión" (sin cambios) ---
-            Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(16.dp, 0.dp)
-            ) {
-                Image(
-                    AppIcons.User,
-                    contentDescription = "Usuario",
-                    modifier = Modifier
-                        .size(160.dp)
-                )
-                Text(
-                    text = "Inicia sesión para guardar tus pistas y sincronizarlas en varios dispositivos",
-                    textAlign = TextAlign.Center
-                )
-            }
-            GreenButton(
-                "Iniciar sesión con Google",
-                { usuarioTabViewModel.startGoogleAuth() },
-                modifier = Modifier
-                    .fillMaxWidth()
-            )
-        } else {
+        if (currentUserLocation != null) {
             LaunchedEffect(Unit) {
                 Log.d("UsuarioTab", "Vista de mapa visible. Solicitando permisos.")
                 permissionLauncher.launch(
@@ -183,5 +152,33 @@ fun UsuarioTab(
                 }
             }
         }
+
+        // --- Pantalla de "Iniciar sesión" (sin cambios) ---
+        Column(
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .padding(16.dp, 0.dp)
+        ) {
+            Image(
+                AppIcons.User,
+                contentDescription = "Usuario",
+                modifier = Modifier
+                    .size(160.dp)
+            )
+            Text(
+                text = "Inicia sesión para guardar tus pistas y sincronizarlas en varios dispositivos",
+                textAlign = TextAlign.Center
+            )
+        }
+        RedButton(
+            "Cerrar sesión",
+            { usuarioTabViewModel.cerrarSesion(navigateToLogin) },
+            modifier = Modifier
+                .fillMaxWidth()
+        )
+
     }
 }
