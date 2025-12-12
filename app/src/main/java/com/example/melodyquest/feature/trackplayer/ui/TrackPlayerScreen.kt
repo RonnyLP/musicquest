@@ -1,6 +1,7 @@
 package com.example.melodyquest.feature.trackplayer.ui
 
 import android.content.pm.ActivityInfo
+import android.util.Log
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,12 +39,16 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.example.melodyquest.core.ui.components.AppHeader
 import com.example.melodyquest.core.ui.icons.AppIcons
 import com.example.melodyquest.core.ui.icons.Countdown
 import com.example.melodyquest.core.ui.icons.DoubleChevronArrow
 import com.example.melodyquest.core.ui.icons.Gear
 import com.example.melodyquest.core.ui.icons.Metronome
+import com.example.melodyquest.core.ui.icons.Minus
 import com.example.melodyquest.core.ui.icons.Pause
 import com.example.melodyquest.core.ui.icons.Play
 import com.example.melodyquest.core.ui.icons.Plus
@@ -62,6 +69,7 @@ fun TrackPlayerScreenPreview(fakeVM: ITrackPlayerViewModel = FakeTrackPlayerView
 
     TrackPlayerScreen(
         viewModel = fakeVM,
+        trackId = "",
         onNavigateBack = {}
     )
 }
@@ -74,6 +82,7 @@ fun TrackPlayerScreenPreview2(fakeVM: ITrackPlayerViewModel = FakeTrackPlayerVie
 
     TrackPlayerScreen(
         viewModel = fakeVM,
+        trackId = "",
         onNavigateBack = {}
     )
 }
@@ -83,6 +92,7 @@ fun TrackPlayerScreenPreview2(fakeVM: ITrackPlayerViewModel = FakeTrackPlayerVie
 @Composable
 fun TrackPlayerScreen(
     viewModel: ITrackPlayerViewModel = hiltViewModel<TrackPlayerViewModel>(),
+    trackId: String,
     onNavigateBack: () -> Unit
 ) {
 
@@ -91,26 +101,45 @@ fun TrackPlayerScreen(
     val isPlayerReady by viewModel.isReady.collectAsState()
     val onEvent = viewModel::onEvent
 
-    LaunchedEffect(Unit) {
+    val lifecycleOwner = LocalLifecycleOwner.current
 
-
-        viewModel.publicEvents.collect { event ->
-            when (event) {
-                TrackPlayerPublicEvent.NavigateBack -> {
-                    onNavigateBack()
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewModel.publicEvents.collect { event ->
+                when (event) {
+                    TrackPlayerPublicEvent.NavigateBack -> {
+                        viewModel.release()
+                        onNavigateBack()
+                    }
                 }
             }
         }
     }
 
+//    LaunchedEffect(viewModel) {
+//
+//
+//        viewModel.publicEvents.collect { event ->
+//            when (event) {
+//                TrackPlayerPublicEvent.NavigateBack -> {
+////                    viewModel.release()
+//                    onNavigateBack()
+//                }
+//            }
+//        }
+//    }
+
+    LaunchedEffect(Unit) { Log.d("TrackPlayer", "VM instance: ${System.identityHashCode(viewModel)}") }
 
 
 
-    DisposableEffect(Unit) {
+    DisposableEffect(viewModel) {
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
+        Log.d("TrackPlayer", "TrackPlayerScreen ON_DISPOSE called")
         onDispose {
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            viewModel.release()
         }
     }
 
@@ -187,6 +216,7 @@ fun TrackPlayerScreen(
                 onToggleMetronome = { onEvent(TrackPlayerEvent.ToggleMetronome) },
                 onToggleExtraOptions = { onEvent(TrackPlayerEvent.ToggleExtraOptions) },
                 onCountIn = { onEvent(TrackPlayerEvent.ToggleMetronomeCountIn) },
+                onBpmChange = { onEvent(TrackPlayerEvent.ChangeBpm(it)) },
                 onEvent = onEvent
             )
 
@@ -209,6 +239,8 @@ fun PlayerControls(
     onTransposeDown: () -> Unit,
     onToggleMetronome: () -> Unit,
     onToggleExtraOptions: () -> Unit,
+    onBpmChange: (Int) -> Unit,
+//    onTransposeChange: (Int) -> Unit,
     onCountIn: () -> Unit,
     onEvent: (TrackPlayerEvent) -> Unit
 ) {
@@ -261,18 +293,18 @@ fun PlayerControls(
                             .size(24.dp)
                     )
                 }
-                Box(
-                    modifier = Modifier
-                        .clickable { onTransposeUp() }
-                        .padding(16.dp, 8.dp)
-                ) {
-                    Icon(
-                        AppIcons.Plus,
-                        contentDescription = "Transponer +1",
-                        modifier = Modifier
-                            .size(24.dp)
-                    )
-                }
+//                Box(
+//                    modifier = Modifier
+//                        .clickable { onTransposeUp() }
+//                        .padding(16.dp, 8.dp)
+//                ) {
+//                    Icon(
+//                        AppIcons.Plus,
+//                        contentDescription = "Transponer +1",
+//                        modifier = Modifier
+//                            .size(24.dp)
+//                    )
+//                }
             }
         }
 
@@ -338,7 +370,7 @@ fun PlayerControls(
                    .offset(0.dp, animatedOffsetY)
                    .border(2.dp, Color.Black, shape = RoundedCornerShape(8.dp))
                    .background(Color.White)
-                   .padding(8.dp)
+                   .padding(16.dp, 8.dp)
 
 
             ) {
@@ -362,6 +394,86 @@ fun PlayerControls(
                                 rotationZ = 90f
                             )
                     )
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                    ) {
+                        Text("BPM")
+
+                        Spacer(Modifier.height(8.dp))
+
+                        BasicTextField(
+                            value = state.trackConfiguration.bpm.toString(),
+                            onValueChange = {onBpmChange(it.toInt())},
+                            singleLine = true,
+                            decorationBox = { innerTextField ->
+                                Box(
+                                    modifier = Modifier
+                                        .padding(4.dp, 8.dp)
+
+                                ) {
+                                    innerTextField()
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(2.dp, Color.Black, shape = RoundedCornerShape(4.dp))
+
+                        )
+
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                    ) {
+                        Text("Transponer")
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            Modifier
+//                                .padding(8.dp, 0.dp)
+                        ) {
+                            Box(
+                                Modifier
+                                    .size(24.dp)
+                                    .border(2.dp, Color.Black, shape = RoundedCornerShape(4.dp))
+                                    .padding(4.dp)
+                            ) {
+                                Icon(
+                                    AppIcons.Minus,
+                                    contentDescription = "Transponer -1",
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.weight(1f))
+
+                            Box(
+                                Modifier
+                                    .size(24.dp)
+                                    .border(2.dp, Color.Black, shape = RoundedCornerShape(4.dp))
+                                    .padding(4.dp)
+                            ) {
+                                Icon(
+                                    AppIcons.Plus,
+                                    contentDescription = "Transponer +1",
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                )
+                            }
+
+                        }
+                    }
                 }
 
             }

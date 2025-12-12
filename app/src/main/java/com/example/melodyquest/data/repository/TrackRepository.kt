@@ -1,10 +1,12 @@
 package com.example.melodyquest.data.repository
 
+import android.util.Log
 import com.example.melodyquest.data.local.dao.TrackDAO
 import com.example.melodyquest.data.local.entity.Track
 import com.example.melodyquest.data.remote.TrackRemoteDataSource
 import com.example.melodyquest.domain.model.TrackConfiguration
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.onEach
 import java.util.UUID
 import javax.inject.Inject
 
@@ -23,6 +25,9 @@ class TrackRepository @Inject constructor(
 
     suspend fun getLocalTracks(email: String): List<Track> =
         trackDao.getTracksForUser(email)
+
+    suspend fun getTrackById(id: String): Track? =
+        trackDao.getTrackById(id)
 
     suspend fun addTrack(email: String, name: String, config: TrackConfiguration) {
         val id = UUID.randomUUID().toString()
@@ -51,5 +56,11 @@ class TrackRepository @Inject constructor(
 
     fun getTracksFlow(email: String): Flow<List<Track>> =
         trackDao.getTracksFlow(email)
+            .onEach { tracks ->
+                Log.d("TRACKS_FROM_ROOM", "Total tracks: ${tracks.size}")
+                tracks.forEach { track ->
+                    Log.d("TRACKS_FROM_ROOM", "Track ID = ${track.id}")
+                }
+            }
 
 }

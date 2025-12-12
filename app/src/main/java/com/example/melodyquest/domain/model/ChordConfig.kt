@@ -6,6 +6,6 @@ import kotlinx.serialization.Serializable
 data class ChordConfig(
     val root: Note,
     val octave: Int,
-    val type: ChordType,
+    val typeIdx: Int,
     val durationBeats: Int
 )

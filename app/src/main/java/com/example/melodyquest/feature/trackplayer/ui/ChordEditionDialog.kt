@@ -68,7 +68,8 @@ fun ChordEditionDialog(
                             minValue = 0
                             maxValue = ChordTypes.entries.size - 1
 //                            value = state.activeChordConfig!!.type.ordinal
-                            value = ChordTypes.ordinal(state.tempChordConfig!!.type)
+//                            value = ChordTypes.ordinal(state.tempChordConfig!!.typeIdx)
+                            value = state.tempChordConfig!!.typeIdx
                             displayedValues = ChordTypes.entries.map{ it.chordName }.toTypedArray()
                             setOnValueChangedListener { _, _, newChordIdx ->
                                 onEvent(TrackPlayerEvent.EditTempChordType(newChordIdx))

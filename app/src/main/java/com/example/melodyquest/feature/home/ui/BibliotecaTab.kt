@@ -50,6 +50,7 @@ import com.example.melodyquest.feature.home.viewmodel.BibliotecaTabViewModel
 @Composable
 fun BibliotecaTabPreview() {
     BibliotecaTab(
+        onNavigateToPlayer = {}
     )
 }
 
@@ -57,18 +58,18 @@ fun BibliotecaTabPreview() {
 fun BibliotecaTab(
     innerPadding:  PaddingValues = PaddingValues(0.dp),
     bibliotecaTabViewModel: BibliotecaTabViewModel = viewModel(),
-    onNavigateToPlayer: () -> Unit = {}
+    onNavigateToPlayer: (id: String) -> Unit
 ) {
 
-    LaunchedEffect(Unit) {
-        bibliotecaTabViewModel.events.collect { event ->
-            when (event) {
-                BibliotecaEvent.NavigateToPlayer -> {
-                    onNavigateToPlayer()
-                }
-            }
-        }
-    }
+//    LaunchedEffect(Unit) {
+//        bibliotecaTabViewModel.events.collect { event ->
+//            when (event) {
+//                BibliotecaEvent.NavigateToPlayer -> {
+//                    onNavigateToPlayer()
+//                }
+//            }
+//        }
+//    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -101,7 +102,8 @@ fun BibliotecaTab(
                         modifier =  Modifier
                             .weight(1f)
                             .clickable {
-                                bibliotecaTabViewModel.navigateToPlayer()
+//                                bibliotecaTabViewModel.navigateToPlayer()
+                                onNavigateToPlayer("1")
                             }
                     )
                     Box(
@@ -138,7 +140,8 @@ fun BibliotecaTab(
                         modifier =  Modifier
                             .weight(1f)
                             .clickable {
-                                bibliotecaTabViewModel.navigateToPlayer()
+//                                bibliotecaTabViewModel.navigateToPlayer()
+                                onNavigateToPlayer("1")
                             }
                     )
                     Box(

@@ -19,7 +19,7 @@ interface TrackDAO {
 
 
     @Query("SELECT * FROM track WHERE id = :id")
-    fun getTrackById(id: Int): Track
+    fun getTrackById(id: String): Track
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTrack(track: Track)

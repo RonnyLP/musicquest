@@ -32,7 +32,7 @@ interface TrackQuickEditor {
 interface IInicioTabViewModel {
     val tracks: StateFlow<List<Track>>
     val events: SharedFlow<InicioEvent>
-    fun navigateToPlayer() {}
+    fun navigateToPlayer(id: String) {}
 
     val trackEditor: TrackQuickEditor
 
@@ -94,7 +94,7 @@ class InicioTabViewModel @Inject constructor(
     )
     override val events = _events.asSharedFlow()
 
-    override fun navigateToPlayer() {
+    override fun navigateToPlayer(id: String) {
         Log.d("ViewModelEvent", "Triggering Navigate to player")
         val emitted = _events.tryEmit(InicioEvent.NavigateToPlayer)
         Log.d("ViewModelEvent", "Event emission success: $emitted") // <<< AÑADE ESTO

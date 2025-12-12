@@ -2,13 +2,20 @@ package com.example.melodyquest.feature.trackplayer.viewmodel
 
 import androidx.lifecycle.ViewModel
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.viewModelScope
+import com.example.melodyquest.data.local.entity.Track
+import com.example.melodyquest.data.repository.TrackRepository
+import com.example.melodyquest.domain.auth.AuthRepository
 import com.example.melodyquest.domain.model.ChordConfig
+import com.example.melodyquest.domain.model.ChordType
 import com.example.melodyquest.domain.model.ChordTypes
 import com.example.melodyquest.domain.model.Notes
 import com.example.melodyquest.domain.model.TimeSignature
 import com.example.melodyquest.domain.model.TrackConfiguration
 import com.example.melodyquest.domain.trackplayer.TrackPlayerInterface
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,6 +23,10 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 
@@ -35,22 +46,83 @@ interface ITrackPlayerViewModel {
 
     fun onEvent(event: TrackPlayerEvent) {}
     val publicEvents: SharedFlow<TrackPlayerPublicEvent>
-    fun getDisplayChordName(chordConfig: ChordConfig): String = chordConfig.type.getAbbrName(chordConfig.root)
+    fun getDisplayChordName(chordConfig: ChordConfig): String = ChordTypes.entries[chordConfig.typeIdx].getAbbrName(chordConfig.root)
+    fun release() {}
 }
 
 
 @HiltViewModel
 class TrackPlayerViewModel @Inject constructor(
     private val trackPlayer: TrackPlayerInterface,
+    private val repository: TrackRepository,
+    private val authRepository: AuthRepository,
+    savedStateHandle: SavedStateHandle
 //    @ApplicationContext private val context: Context
 ): ViewModel(), ITrackPlayerViewModel {
 
+    private val trackId: String = checkNotNull(savedStateHandle["id"])
+
+    private val email: String = authRepository.getCurrentUser()?.email
+        ?: throw IllegalStateException("No authenticated user")
+
+    val track = MutableStateFlow<Track?>(null)
 
     private var _state = MutableStateFlow(TrackPlayerState())
     override val state = _state.asStateFlow()
 
     override val isReady = trackPlayer.isReady
 
+
+
+    init {
+        loadTrack()
+
+        viewModelScope.launch {
+            state
+                .map { it.trackConfiguration } // solo nos interesan cambios del configuration
+                .distinctUntilChanged()        // evita guardar si no cambió nada
+                .collect { newConfig ->
+                    val logConfig = newConfig.copy(progressionConfig = emptyList())
+
+                    Log.d("TrackConfig", "Config changed: $logConfig")
+
+                    saveConfigurationToRepository(newConfig)
+                }
+        }
+    }
+
+
+    fun loadTrack() {
+        viewModelScope.launch {
+            Log.d("TrackPlayerViewModel", "Loading track with ID: $trackId")
+            val foundTrack = withContext(Dispatchers.IO) {
+                repository.getTrackById(trackId)
+            }
+
+            if (foundTrack == null) return@launch
+            track.value = foundTrack
+            _state.value = _state.value.copy(
+                trackConfiguration = foundTrack.data
+            )
+//            track.value = track.value.copy(
+//                data = track.value?.data
+//            )
+        }
+    }
+
+    private suspend fun saveConfigurationToRepository(newConfig: TrackConfiguration) {
+        val currentTrack = track.value ?: return
+
+        val updatedTrack = currentTrack.copy(
+            data = newConfig
+        )
+
+        withContext(Dispatchers.IO) {
+            repository.updateTrack(email, updatedTrack)
+        }
+
+        Log.d("TrackPlayerVM", "Track saved with new configuration")
+    }
 
 //    private val _activeChord = mutableStateOf<ChordConfig?>(null)
 //    val activeChord: State<ChordConfig?> = _activeChord
@@ -134,6 +206,10 @@ class TrackPlayerViewModel @Inject constructor(
     )
     override val publicEvents = _publicEvents.asSharedFlow()
 
+    override fun release() {
+        trackPlayer.release()
+    }
+
 //    override fun getDisplayChordName(chordConfig: ChordConfig): String {
 //        return chordConfig.type.getAbbrName(chordConfig.root)
 //    }
@@ -159,7 +235,8 @@ class TrackPlayerViewModel @Inject constructor(
             TrackPlayerEvent.AddChord -> {
                 _state.value = _state.value.copy(
                     trackConfiguration = _state.value.trackConfiguration.copy(
-                        progressionConfig = _state.value.trackConfiguration.progressionConfig + ChordConfig(Notes.C, 4, ChordTypes.MAJOR, 4)
+                        progressionConfig = _state.value.trackConfiguration.progressionConfig + ChordConfig(Notes.C, 4,
+                            ChordTypes.ordinal(ChordTypes.MAJOR), 4)
                     )
                 )
             }
@@ -192,7 +269,7 @@ class TrackPlayerViewModel @Inject constructor(
             }
             is TrackPlayerEvent.EditTempChordType -> {
                 _state.value = _state.value.copy(
-                    tempChordConfig = _state.value.tempChordConfig?.copy(type = ChordTypes.entries[event.chordTypeIdx])
+                    tempChordConfig = _state.value.tempChordConfig?.copy(typeIdx = event.chordTypeIdx)
                 )
             }
             is TrackPlayerEvent.EditTempOctave -> {
@@ -215,6 +292,15 @@ class TrackPlayerViewModel @Inject constructor(
                     timeSignatureDropdownEnabled = false
                 )
             }
+            is TrackPlayerEvent.ChangeBpm -> {
+
+                _state.value = _state.value.copy(
+                    trackConfiguration = _state.value.trackConfiguration.copy(
+                        bpm = event.bpm
+                    )
+                )
+            }
+
             TrackPlayerEvent.ShowTimeSignatureDropdown -> {
                 _state.value = _state.value.copy(
                     timeSignatureDropdownEnabled = true
@@ -241,6 +327,12 @@ class TrackPlayerViewModel @Inject constructor(
                 transposeTrack(1)
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d("TrackPlayerViewModel", "onCleared called")
+        trackPlayer.release()
     }
 
 }
@@ -270,6 +362,9 @@ sealed class TrackPlayerEvent {
     object ToggleMetronome : TrackPlayerEvent()
     object ToggleExtraOptions : TrackPlayerEvent()
     object ToggleMetronomeCountIn : TrackPlayerEvent()
+
+    data class ChangeBpm(val bpm: Int) : TrackPlayerEvent()
+
 }
 
 sealed class TrackPlayerPublicEvent {
@@ -303,13 +398,13 @@ class FakeTrackPlayerViewModel(
             progressionConfig = listOf(
                 ChordConfig(
                     root = Notes.C,
-                    type = ChordTypes.MAJOR,
+                    typeIdx = ChordTypes.ordinal(ChordTypes.MAJOR),
                     octave = 4,
                     durationBeats = 4
                 ),
                 ChordConfig(
                     root = Notes.E,
-                    type = ChordTypes.MAJOR,
+                    typeIdx = ChordTypes.ordinal(ChordTypes.MAJOR),
                     octave = 4,
                     durationBeats = 4
                 )

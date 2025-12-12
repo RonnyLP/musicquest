@@ -38,7 +38,7 @@ fun HomeScreenPreview(
 @Composable
 fun HomeScreen(
     viewModel: IHomeScreenViewModel = viewModel<HomeScreenViewModel>(),
-    onNavigateToPlayer: () -> Unit,
+    onNavigateToPlayer: (id: String) -> Unit,
     preview: Boolean = false
 ) {
     val selectedTab = viewModel.selectedTab.value

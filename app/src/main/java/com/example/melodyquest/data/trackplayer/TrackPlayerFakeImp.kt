@@ -15,23 +15,23 @@ class TrackPlayerFakeImp (
     override val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
 
     override fun setupTrack(trackConfiguration: TrackConfiguration) {
-        TODO("Not yet implemented")
+
     }
 
     override fun playTrack() {
-        TODO("Not yet implemented")
+
     }
 
     override fun pauseTrack() {
-        TODO("Not yet implemented")
+
     }
 
     override fun stopTrack() {
-        TODO("Not yet implemented")
+
     }
 
     override fun release() {
-        TODO("Not yet implemented")
+
     }
 
 }

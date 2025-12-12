@@ -9,5 +9,7 @@ sealed class Screen(val route: String) {
     object FullLogin : Screen("full_login")
     object Register : Screen("register")
     object Home : Screen("home")
-    object Player : Screen("player")
+    object Player : Screen("player/{id}") {
+        fun createRoute(id: String) = "player/$id"
+    }
 }

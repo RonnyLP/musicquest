@@ -3,6 +3,7 @@ package com.example.melodyquest.di
 import android.content.Context
 import com.example.melodyquest.data.trackplayer.AudioTrackTrackPlayerImp
 import com.example.melodyquest.data.trackplayer.SoundPoolTrackPlayerImp
+import com.example.melodyquest.data.trackplayer.TrackPlayerFakeImp
 import com.example.melodyquest.domain.trackplayer.TrackPlayerInterface
 import dagger.Module
 import dagger.Provides
@@ -21,6 +22,7 @@ object AppModule {
         @ApplicationContext context: Context
     ): TrackPlayerInterface {
         return AudioTrackTrackPlayerImp(context)
+//        return TrackPlayerFakeImp(context)
     }
 }
 

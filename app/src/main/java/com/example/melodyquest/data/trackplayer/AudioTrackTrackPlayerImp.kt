@@ -8,7 +8,9 @@ import android.media.AudioTrack
 import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
+import android.util.Log
 import com.example.melodyquest.R
+import com.example.melodyquest.domain.model.ChordTypes
 import com.example.melodyquest.domain.model.Note
 import com.example.melodyquest.domain.model.TimeSignature
 import com.example.melodyquest.domain.model.Notes
@@ -43,6 +45,7 @@ class AudioTrackTrackPlayerImp(
     init  {
         loadNotes(this.context)
 
+
         _isReady.value = true
     }
 
@@ -73,15 +76,25 @@ class AudioTrackTrackPlayerImp(
         val originalHighPcm = loadWav(context, R.raw.metronome_tick)
         val originalLowPcm = loadWav(context, R.raw.metronome_tock)
 
+        Log.e("DEBUG_PCM", "originalHighPcm size = ${originalHighPcm.size}")
+        Log.e("DEBUG_PCM", "originalLowPcm size = ${originalLowPcm.size}")
+
         val envelopedHighPcm = applyEnvelope(originalHighPcm, attackMs = 1L, releaseMs = 50L)
         val envelopedLowPcm = applyEnvelope(originalLowPcm, attackMs = 1L, releaseMs = 50L)
-
 
         val adjustedHighPcm = applyVolume(envelopedHighPcm, 0.5f)
         val adjustedLowPcm = applyVolume(envelopedLowPcm, 0.5f)
 
+        Log.e("DEBUG_PCM", "high size = ${adjustedHighPcm.size}")
+        Log.e("DEBUG_PCM", "low size = ${adjustedLowPcm.size}")
+
         metronomeHighAudioTrack = createStaticAudioTrack(adjustedHighPcm)
         metronomeLowAudioTrack = createStaticAudioTrack(adjustedLowPcm)
+
+        Log.e("DEBUG_METRONOME", "metronomeHighAudioTrack state = ${metronomeHighAudioTrack?.state}")
+        Log.e("DEBUG_METRONOME", "metronomeLowAudioTrack state = ${metronomeLowAudioTrack?.state}")
+        Log.e("DEBUG_METRONOME", "HIGH is null? ${metronomeHighAudioTrack == null}")
+        Log.e("DEBUG_METRONOME", "LOW is null? ${metronomeLowAudioTrack == null}")
 
     }
 
@@ -235,6 +248,21 @@ class AudioTrackTrackPlayerImp(
             it.release()
         }
         chordAudioTracks.clear()
+        metronomeHighAudioTrack?.release()
+        metronomeLowAudioTrack?.release()
+
+        val originalHighPcm = loadWav(context, R.raw.metronome_tick)
+        val originalLowPcm = loadWav(context, R.raw.metronome_tock)
+        val envelopedHighPcm = applyEnvelope(originalHighPcm, attackMs = 1L, releaseMs = 50L)
+        val envelopedLowPcm = applyEnvelope(originalLowPcm, attackMs = 1L, releaseMs = 50L)
+        val adjustedHighPcm = applyVolume(envelopedHighPcm, 0.5f)
+        val adjustedLowPcm = applyVolume(envelopedLowPcm, 0.5f)
+
+        metronomeHighAudioTrack = createStaticAudioTrack(adjustedHighPcm)
+        metronomeLowAudioTrack = createStaticAudioTrack(adjustedLowPcm)
+
+        Log.e("DEBUG_SETUP", "Metronome tracks recreated - High state: ${metronomeHighAudioTrack?.state}, Low state: ${metronomeLowAudioTrack?.state}")
+
 
         this.trackConfig = trackConfiguration
         this.trackTimeline = TrackTimeline(
@@ -242,7 +270,7 @@ class AudioTrackTrackPlayerImp(
             trackConfiguration.bpm
         )
         trackTimeline.chordEvents.forEach { chordEvent ->
-            val chordUnmixedSamples: List<ShortArray> = chordEvent.type.intervals.map { interval ->
+            val chordUnmixedSamples: List<ShortArray> = ChordTypes.entries[chordEvent.typeIdx].intervals.map { interval ->
                 val actualNote = Notes.allNotes.first { it.semitone == (chordEvent.root.semitone + interval) % 12 }
                 val actualOctave = chordEvent.octave + (chordEvent.root.semitone + interval) / 12
                 noteToSoundId[actualNote to actualOctave] ?: shortArrayOf()
@@ -268,6 +296,8 @@ class AudioTrackTrackPlayerImp(
     private fun createStaticAudioTrack(pcmData: ShortArray): AudioTrack {
         val sampleRate = 44100
 
+        Log.e("METRONOME", "sampleRate = $sampleRate")
+
         val audioTrack = AudioTrack(
             AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -292,6 +322,8 @@ class AudioTrackTrackPlayerImp(
     override fun playTrack() {
         job?.cancel()
 
+        Log.d("TrackConfig", "Config enviada a AudioTrack: $trackConfig")
+
         job = CoroutineScope(Dispatchers.Default).launch {
             // Conteo inicial si está habilitado
             if (trackConfig.metronomeCountIn) {
@@ -305,11 +337,13 @@ class AudioTrackTrackPlayerImp(
                     } else {
                         metronomeLowAudioTrack
                     }
-
+                    Log.e("DEBUG_COUNTIN", "beat=$beat, track is null? ${track == null}, state=${track?.state}")
                     track?.let {
                         if (it.state == AudioTrack.STATE_INITIALIZED) {
                             it.stop()
                             it.setPlaybackHeadPosition(0)
+//                            it.reloadStaticData()
+                            Log.i("TrackPlayerImp", "Playing count tick")
                             it.play()
                         }
                     }
@@ -343,10 +377,13 @@ class AudioTrackTrackPlayerImp(
                                 metronomeLowAudioTrack
                             }
 
+                            Log.e("DEBUG_METRO", "beat=$beat, track is null? ${track == null}, state=${track?.state}")
                             track?.let {
                                 if (it.state == AudioTrack.STATE_INITIALIZED) {
                                     it.stop()
                                     it.setPlaybackHeadPosition(0)
+//                                    it.reloadStaticData()
+                                    Log.i("TrackPlayerImp", "Playing metronome tick")
                                     it.play()
                                 }
                             }
@@ -402,13 +439,26 @@ class AudioTrackTrackPlayerImp(
     }
 
     override fun stopTrack() {
+        Log.d("TrackPlayerImp", "Stopping track")
         job?.cancel()
         job = null
         chordAudioTracks.forEach {
             if (it.playState == AudioTrack.PLAYSTATE_PLAYING) it.stop()
         }
-        metronomeHighAudioTrack?.stop()
-        metronomeLowAudioTrack?.stop()
+
+//        metronomeHighAudioTrack?.stop()
+//        metronomeLowAudioTrack?.stop()
+        if (metronomeHighAudioTrack?.state == AudioTrack.STATE_INITIALIZED &&
+            metronomeHighAudioTrack?.playState == AudioTrack.PLAYSTATE_PLAYING
+        ) {
+            metronomeHighAudioTrack?.stop()
+        }
+
+        if (metronomeLowAudioTrack?.state == AudioTrack.STATE_INITIALIZED &&
+            metronomeLowAudioTrack?.playState == AudioTrack.PLAYSTATE_PLAYING
+        ) {
+            metronomeLowAudioTrack?.stop()
+        }
     }
     override fun release() {
         job?.cancel()

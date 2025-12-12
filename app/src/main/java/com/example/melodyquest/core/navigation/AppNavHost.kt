@@ -1,5 +1,6 @@
 package com.example.melodyquest.core.navigation
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -103,17 +104,32 @@ fun AppNavHost(
         // Pantalla principal (Home)
         composable(Screen.Home.route) {
             HomeScreen(
-                onNavigateToPlayer = {
-                    navController.navigate(Screen.Player.route)
+                onNavigateToPlayer = { id ->
+                    navController.navigate(Screen.Player.createRoute(id))
                 }
             )
         }
 
         // Pantalla del reproductor
-        composable(Screen.Player.route) {
+        composable(
+            Screen.Player.route,
+            arguments = listOf(navArgument("id") { type = NavType.StringType })
+        ) { backStackEntry ->
+
+            val id = backStackEntry.arguments?.getString("id") ?: ""
+
             TrackPlayerScreen(
+                trackId = id,
                 onNavigateBack = {
-                    navController.popBackStack()
+//                    val current = navController.currentDestination?.route
+//                    Log.d("NavTest", "Current: $current")
+//
+//                    val result = navController.popBackStack()
+//                    Log.d("NavTest", "popBackStack: $result")
+
+                    navController.navigate(Screen.Home.route)
+
+//                    println("Se navegó hacia atrás")
                 }
             )
         }

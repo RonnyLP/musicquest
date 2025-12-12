@@ -18,7 +18,7 @@ class TrackTimeline(
                 ChordEvent(
                     root = chordConfig.root,
                     octave = chordConfig.octave,
-                    type = chordConfig.type,
+                    typeIdx = chordConfig.typeIdx,
                     startTimeMs = accumulatedTimeBeats * beatDurationMs,
                     durationMs = chordConfig.durationBeats * beatDurationMs
                 )

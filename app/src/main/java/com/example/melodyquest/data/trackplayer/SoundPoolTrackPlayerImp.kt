@@ -5,6 +5,7 @@ import android.media.AudioAttributes
 import android.media.SoundPool
 import com.example.melodyquest.R
 import com.example.melodyquest.domain.model.ChordType
+import com.example.melodyquest.domain.model.ChordTypes
 import com.example.melodyquest.domain.model.Note
 import com.example.melodyquest.domain.model.Notes
 import com.example.melodyquest.domain.model.TrackConfiguration
@@ -118,7 +119,7 @@ class SoundPoolTrackPlayerImp (
                         delay(1)
                     }
                     if (!isActive) return@launch
-                    val streams = playChord(chordEv.root, chordEv.octave, chordEv.type)
+                    val streams = playChord(chordEv.root, chordEv.octave, ChordTypes.MAJOR)
 
 //                    synchronized(activeStreams) {
 //                        activeStreams.addAll(streams)

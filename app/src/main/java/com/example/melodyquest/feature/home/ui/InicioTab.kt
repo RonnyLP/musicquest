@@ -73,17 +73,17 @@ fun InicioTabPreview(fakeViewModel: IInicioTabViewModel = FakeInicioTabViewModel
 fun InicioTab(
     innerPadding: PaddingValues,
     vm: IInicioTabViewModel = hiltViewModel<InicioTabViewModel>(),
-    onNavigateToPlayer: () -> Unit = {}
+    onNavigateToPlayer: (id: String) -> Unit = {}
 ) {
 
-    LaunchedEffect(Unit) {
-        vm.events.collect { event ->
-            when (event) {
-                is InicioEvent.NavigateToPlayer -> onNavigateToPlayer()
-            }
-        }
-
-    }
+//    LaunchedEffect(Unit) {
+//        vm.events.collect { event ->
+//            when (event) {
+//                is InicioEvent.NavigateToPlayer -> onNavigateToPlayer()
+//            }
+//        }
+//
+//    }
 
     val tracks by vm.tracks.collectAsState()
 //    val tempTrack by vm.tempTrack.collectAsState()
@@ -114,7 +114,8 @@ fun InicioTab(
                     modifier = Modifier
                         .padding(16.dp, 0.dp)
                         .clickable {
-                            vm.navigateToPlayer()
+//                            vm.navigateToPlayer(track.id)
+                            onNavigateToPlayer(track.id)
                         }
                 ) {
                     Text(
