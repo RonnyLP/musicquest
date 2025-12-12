@@ -104,8 +104,8 @@ fun AppNavHost(
         // Pantalla principal (Home)
         composable(Screen.Home.route) {
             HomeScreen(
-                onNavigateToPlayer = { id ->
-                    navController.navigate(Screen.Player.createRoute(id))
+                onNavigateToPlayer = { id, isLibrary ->
+                    navController.navigate(Screen.Player.createRoute(id, isLibrary))
                 },
                 onNavigateToLogin = {
                     navController.navigate(Screen.Welcome.route)
@@ -116,13 +116,18 @@ fun AppNavHost(
         // Pantalla del reproductor
         composable(
             Screen.Player.route,
-            arguments = listOf(navArgument("id") { type = NavType.StringType })
+            arguments = listOf(
+                navArgument("id") { type = NavType.StringType },
+                navArgument("isLibrary") { type = NavType.BoolType }
+            )
         ) { backStackEntry ->
 
             val id = backStackEntry.arguments?.getString("id") ?: ""
+            val isLibrary = backStackEntry.arguments?.getBoolean("isLibrary")!!
 
             TrackPlayerScreen(
                 trackId = id,
+                isLibrary = isLibrary,
                 onNavigateBack = {
 //                    val current = navController.currentDestination?.route
 //                    Log.d("NavTest", "Current: $current")

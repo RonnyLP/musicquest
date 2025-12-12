@@ -23,6 +23,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.melodyquest.core.theme.Green500
 import com.example.melodyquest.core.ui.components.GrayButton
@@ -57,8 +59,8 @@ fun BibliotecaTabPreview() {
 @Composable
 fun BibliotecaTab(
     innerPadding:  PaddingValues = PaddingValues(0.dp),
-    bibliotecaTabViewModel: BibliotecaTabViewModel = viewModel(),
-    onNavigateToPlayer: (id: String) -> Unit
+    bibliotecaTabViewModel: BibliotecaTabViewModel = hiltViewModel(),
+        onNavigateToPlayer: (id: String) -> Unit
 ) {
 
 //    LaunchedEffect(Unit) {
@@ -70,6 +72,11 @@ fun BibliotecaTab(
 //            }
 //        }
 //    }
+//    val popularSongs = bibliotecaTabViewModel.popularSongs.collectAsState()
+//    val commonProgressions = bibliotecaTabViewModel.commonProgressions.collectAsState()
+    val libraryTracks = bibliotecaTabViewModel.libraryTracks
+
+
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -83,7 +90,7 @@ fun BibliotecaTab(
             modifier = Modifier
                 .padding(16.dp, 0.dp)
         ) {
-            Text("Canciones populares", fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
+            Text("Canciones y progresiones", fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
         }
 
 
@@ -92,67 +99,67 @@ fun BibliotecaTab(
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            bibliotecaTabViewModel.popularSongs.forEach { prog ->
+            libraryTracks.forEach { track ->
                 Row(
                     modifier = Modifier
                         .padding(16.dp, 0.dp)
                 ) {
                     Text(
-                        prog,
+                        track.name,
                         modifier =  Modifier
                             .weight(1f)
                             .clickable {
 //                                bibliotecaTabViewModel.navigateToPlayer()
-                                onNavigateToPlayer("1")
+                                onNavigateToPlayer(track.id)
                             }
                     )
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .background(Green500)
-
-                    )
+//                    Box(
+//                        modifier = Modifier
+//                            .size(32.dp)
+//                            .background(Green500)
+//
+//                    )
                 }
 
             }
         }
 
 
-        Row(
-            modifier = Modifier
-                .padding(16.dp, 0.dp)
-        ) {
-            Text("Progresiones comunes", fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            bibliotecaTabViewModel.commonProgressions.forEach { prog ->
-                Row(
-                    modifier = Modifier
-                        .padding(16.dp, 0.dp)
-                ) {
-                    Text(
-                        prog,
-                        modifier =  Modifier
-                            .weight(1f)
-                            .clickable {
-//                                bibliotecaTabViewModel.navigateToPlayer()
-                                onNavigateToPlayer("1")
-                            }
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .background(Green500)
-                    )
-                }
-
-            }
-        }
+//        Row(
+//            modifier = Modifier
+//                .padding(16.dp, 0.dp)
+//        ) {
+//            Text("Progresiones comunes", fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
+//        }
+//
+//        Spacer(Modifier.height(16.dp))
+//
+//        Column(
+//            verticalArrangement = Arrangement.spacedBy(16.dp)
+//        ) {
+//            commonProgressions.value.forEach { track ->
+//                Row(
+//                    modifier = Modifier
+//                        .padding(16.dp, 0.dp)
+//                ) {
+//                    Text(
+//                        track.name,
+//                        modifier =  Modifier
+//                            .weight(1f)
+//                            .clickable {
+////                                bibliotecaTabViewModel.navigateToPlayer()
+//                                onNavigateToPlayer(track.id)
+//                            }
+//                    )
+//                    Box(
+//                        modifier = Modifier
+//                            .size(32.dp)
+//                            .background(Green500)
+//                    )
+//                }
+//
+//            }
+//        }
 
         ClonarDialog(
             bibliotecaTabViewModel.isCloneDialogOpen.value,

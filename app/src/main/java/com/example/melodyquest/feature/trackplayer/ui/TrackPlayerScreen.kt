@@ -70,6 +70,7 @@ fun TrackPlayerScreenPreview(fakeVM: ITrackPlayerViewModel = FakeTrackPlayerView
     TrackPlayerScreen(
         viewModel = fakeVM,
         trackId = "",
+        isLibrary = false,
         onNavigateBack = {}
     )
 }
@@ -83,6 +84,7 @@ fun TrackPlayerScreenPreview2(fakeVM: ITrackPlayerViewModel = FakeTrackPlayerVie
     TrackPlayerScreen(
         viewModel = fakeVM,
         trackId = "",
+        isLibrary = true,
         onNavigateBack = {}
     )
 }
@@ -93,6 +95,7 @@ fun TrackPlayerScreenPreview2(fakeVM: ITrackPlayerViewModel = FakeTrackPlayerVie
 fun TrackPlayerScreen(
     viewModel: ITrackPlayerViewModel = hiltViewModel<TrackPlayerViewModel>(),
     trackId: String,
+    isLibrary: Boolean,
     onNavigateBack: () -> Unit
 ) {
 

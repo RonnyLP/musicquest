@@ -7,18 +7,14 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.rememberNavController
 import com.example.melodyquest.core.ui.components.AppHeader
 import com.example.melodyquest.feature.home.viewmodel.FakeHomeScreenViewModel
-import com.example.melodyquest.feature.home.viewmodel.FakeInicioTabViewModel
 import com.example.melodyquest.feature.home.viewmodel.HomeScreenViewModel
 import com.example.melodyquest.feature.home.viewmodel.IHomeScreenViewModel
-import com.example.melodyquest.feature.home.viewmodel.IInicioTabViewModel
 
 
 @Preview
@@ -29,7 +25,7 @@ fun HomeScreenPreview(
 
     HomeScreen(
         viewModel = fakeViewModel,
-        onNavigateToPlayer = {},
+        onNavigateToPlayer = { string: String, bool: Boolean -> },
         preview = true
     )
 }
@@ -38,7 +34,7 @@ fun HomeScreenPreview(
 @Composable
 fun HomeScreen(
     viewModel: IHomeScreenViewModel = viewModel<HomeScreenViewModel>(),
-    onNavigateToPlayer: (id: String) -> Unit,
+    onNavigateToPlayer: (id: String, isLibrary: Boolean) -> Unit,
     onNavigateToLogin: () -> Unit = {},
     preview: Boolean = false
 ) {
@@ -72,14 +68,17 @@ fun HomeScreen(
         if (preview) {
             when (selectedTab) {
                 HomeTab.Inicio -> InicioTabPreview()
-                HomeTab.Biblioteca -> BibliotecaTab(innerPadding, onNavigateToPlayer = onNavigateToPlayer)
+                HomeTab.Biblioteca -> BibliotecaTab(innerPadding, onNavigateToPlayer = { onNavigateToPlayer(it, true) })
                 HomeTab.Perfil -> UsuarioTab(innerPadding)
             }
 
         } else {
             when (selectedTab) {
-                HomeTab.Inicio -> InicioTab(innerPadding, onNavigateToPlayer = onNavigateToPlayer)
-                HomeTab.Biblioteca -> BibliotecaTab(innerPadding, onNavigateToPlayer = onNavigateToPlayer)
+                HomeTab.Inicio -> InicioTab(innerPadding, onNavigateToPlayer = { onNavigateToPlayer(it, false) })
+                HomeTab.Biblioteca -> BibliotecaTab(
+                    innerPadding,
+                    onNavigateToPlayer = { onNavigateToPlayer(it, true) },
+                )
                 HomeTab.Perfil -> UsuarioTab(innerPadding, navigateToLogin = onNavigateToLogin)
             }
         }

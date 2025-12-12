@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.example.melodyquest.data.local.entity.Track
+import com.example.melodyquest.data.repository.LibraryRepository
 import com.example.melodyquest.data.repository.TrackRepository
 import com.example.melodyquest.domain.auth.AuthRepository
 import com.example.melodyquest.domain.model.ChordConfig
@@ -55,12 +56,14 @@ interface ITrackPlayerViewModel {
 class TrackPlayerViewModel @Inject constructor(
     private val trackPlayer: TrackPlayerInterface,
     private val repository: TrackRepository,
+    private val libraryRepository: LibraryRepository,
     private val authRepository: AuthRepository,
     savedStateHandle: SavedStateHandle
 //    @ApplicationContext private val context: Context
 ): ViewModel(), ITrackPlayerViewModel {
 
     private val trackId: String = checkNotNull(savedStateHandle["id"])
+    private val isLibrary: Boolean = checkNotNull(savedStateHandle["isLibrary"])
 
     private val email: String = authRepository.getCurrentUser()?.email
         ?: throw IllegalStateException("No authenticated user")
@@ -96,7 +99,11 @@ class TrackPlayerViewModel @Inject constructor(
         viewModelScope.launch {
             Log.d("TrackPlayerViewModel", "Loading track with ID: $trackId")
             val foundTrack = withContext(Dispatchers.IO) {
-                repository.getTrackById(trackId)
+                if (isLibrary) {
+                    libraryRepository.getTrackById(trackId)
+                } else {
+                    repository.getTrackById(trackId)
+                }
             }
 
             if (foundTrack == null) return@launch
