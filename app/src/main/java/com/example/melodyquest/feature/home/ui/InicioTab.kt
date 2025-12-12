@@ -98,7 +98,7 @@ fun InicioTab(
     ) {
         Spacer(Modifier.height(16.dp))
 
-        SearchWrapper()
+//        SearchWrapper()
 
         GreenButton("Agregar", { vm.openAddDialog() })
 
